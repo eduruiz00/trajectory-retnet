@@ -1,6 +1,7 @@
 import json
 import pdb
 from os.path import join
+from torch.utils.tensorboard import SummaryWriter
 
 import trajectory.utils as utils
 import trajectory.datasets as datasets
@@ -50,6 +51,8 @@ preprocess_fn = datasets.get_preprocess_fn(env.name)
 #######################
 ###### main loop ######
 #######################
+
+writer = SummaryWriter()
 
 observation = env.reset()
 total_reward = 0
@@ -102,6 +105,10 @@ for t in range(T):
         f'time: {timer():.2f} | {args.dataset} | {args.exp_name} | {args.suffix}\n'
     )
 
+    writer.add_scalar('reward', reward, t)
+    writer.add_scalar('total_reward', total_reward, t)
+    writer.add_scalar('score', score, t)
+
     ## visualization
     if t % args.vis_freq == 0 or terminal or t == T:
 
@@ -114,6 +121,8 @@ for t in range(T):
     if terminal: break
 
     observation = next_observation
+
+writer.close()
 
 ## save result as a json file
 json_path = join(args.savepath, 'rollout.json')

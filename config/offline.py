@@ -2,8 +2,10 @@ from trajectory.utils import watch
 
 #------------------------ base ------------------------#
 
-logbase = 'logs/'
-gpt_expname = 'gpt/azure'
+# logbase = 'logs/'
+# gpt_expname = 'gpt/azure'
+logbase = 'pretrained/'
+gpt_expname = 'gpt/pretrained'
 
 ## automatically make experiment names for planning
 ## by labelling folders with these args
@@ -29,7 +31,8 @@ base = {
         'device': 'cuda',
 
         'n_embd': 32,
-        'batch_size': 256,
+        # 'batch_size': 256,
+        'batch_size': 16,
         'learning_rate': 6e-4,
         'lr_decay': True,
         'seed': 42,
