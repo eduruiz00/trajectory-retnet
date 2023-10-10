@@ -73,6 +73,7 @@ six=1.16.0=pypi_0
 smmap=4.0.0=pyhd3eb1b0_0
 sqlite=3.41.2=h5eee18b_0
 sympy=1.12=pypi_0
+tensorboard==2.14.0
 termcolor=2.3.0=pypi_0
 tifffile=2023.7.10=pypi_0
 tk=8.6.12=h1ccaba5_0

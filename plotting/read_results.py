@@ -12,9 +12,10 @@ DATASETS = [
 	for buffer in ['medium-expert-v2', 'medium-v2', 'medium-replay-v2']
 ]
 
-LOGBASE = 'logs'
+LOGBASE = 'pretrained'
 TRIAL = '*'
-EXP_NAME = 'plans/pretrained'
+# EXP_NAME = 'plans/pretrained'
+EXP_NAME = 'plans/defaults/results'
 
 def load_results(paths):
 	'''

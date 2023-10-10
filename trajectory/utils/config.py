@@ -1,8 +1,8 @@
 import os
-import collections
+from collections.abc import Mapping
 import pickle
 
-class Config(collections.Mapping):
+class Config(Mapping):
 
     def __init__(self, _class, verbose=True, savepath=None, **kwargs):
         self._class = _class

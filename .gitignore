@@ -16,3 +16,7 @@ slurm-*.out
 *.pkl
 mjkey.txt
 azure/fuse.cfg
+
+pretrained/
+runs/
+nohup.out
