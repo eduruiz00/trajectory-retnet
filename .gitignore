@@ -20,3 +20,4 @@ azure/fuse.cfg
 pretrained/
 runs/
 nohup.out
+environment_mireia.yml
