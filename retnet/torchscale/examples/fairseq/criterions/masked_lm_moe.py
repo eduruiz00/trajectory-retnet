@@ -7,11 +7,12 @@ import math
 import torch
 import torch.nn.functional as F
 from fairseq import metrics, utils
-from fairseq.criterions import MoECriterion, register_criterion, MoECriterionConfig
+from fairseq.criterions import register_criterion
+from fairseq.criterions.model_criterion import ModelCriterion, ModelCriterionConfig
 
 
-@register_criterion("masked_lm_moe_cross_entropy", dataclass=MoECriterionConfig)
-class MaskedLMMoECrossEntropyCriterion(MoECriterion):
+@register_criterion("masked_lm_moe_cross_entropy", dataclass=ModelCriterionConfig)
+class MaskedLMMoECrossEntropyCriterion(ModelCriterion):
 
     def compute_inner_loss(self, model, sample, reduce=True):
         masked_tokens = sample["target"].ne(self.padding_idx)

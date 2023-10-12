@@ -96,7 +96,6 @@ save_freq = int(n_epochs // args.n_saves)
 
 for epoch in range(n_epochs):
     print(f'\nEpoch: {epoch} / {n_epochs} | {args.dataset} | {args.exp_name}')
-
     trainer.train(model, dataset)
 
     ## get greatest multiple of `save_freq` less than or equal to `save_epoch`

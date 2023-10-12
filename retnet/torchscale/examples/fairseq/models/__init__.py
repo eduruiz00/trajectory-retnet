@@ -22,15 +22,20 @@ for file in os.listdir(models_dir):
         and (file.endswith(".py") or os.path.isdir(path))
     ):
         model_name = file[: file.find(".py")] if file.endswith(".py") else file
-        module = importlib.import_module("models." + model_name)
+        print(model_name)
+        if "retnet" in model_name:
+            print("we are here 1")
+            module = importlib.import_module("models." + model_name)
 
-        # extra `model_parser` for sphinx
-        if model_name in MODEL_REGISTRY:
-            parser = argparse.ArgumentParser(add_help=False)
-            group_archs = parser.add_argument_group("Named architectures")
-            group_archs.add_argument(
-                "--arch", choices=ARCH_MODEL_INV_REGISTRY[model_name]
-            )
-            group_args = parser.add_argument_group("Additional command-line arguments")
-            MODEL_REGISTRY[model_name].add_args(group_args)
-            globals()[model_name + "_parser"] = parser
+            # extra `model_parser` for sphinx
+            print("we are here 2")
+            if model_name in MODEL_REGISTRY:
+                parser = argparse.ArgumentParser(add_help=False)
+                group_archs = parser.add_argument_group("Named architectures")
+                group_archs.add_argument(
+                    "--arch", choices=ARCH_MODEL_INV_REGISTRY[model_name]
+                )
+                print("we are here 3")
+                group_args = parser.add_argument_group("Additional command-line arguments")
+                MODEL_REGISTRY[model_name].add_args(group_args)
+                globals()[model_name + "_parser"] = parser
