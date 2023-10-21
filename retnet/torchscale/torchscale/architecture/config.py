@@ -1,6 +1,7 @@
 # Copyright (c) 2022 Microsoft
 # Licensed under The MIT License [see LICENSE for details]
-
+import os
+import pickle
 
 class EncoderConfig(object):
     def __init__(self, **kwargs):
@@ -137,7 +138,6 @@ class DecoderConfig(object):
 
 class EncoderDecoderConfig(object):
     def __init__(self, **kwargs):
-        self.encoder_embed_dim = kwargs.pop("encoder_embed_dim", 768)
         self.encoder_attention_heads = kwargs.pop("encoder_attention_heads", 12)
         self.encoder_ffn_embed_dim = kwargs.pop("encoder_ffn_embed_dim", 3072)
         self.encoder_layers = kwargs.pop("encoder_layers", 12)
@@ -210,10 +210,8 @@ class EncoderDecoderConfig(object):
                 
                 
 class RetNetConfig(object):
-    def __init__(self, **kwargs):
-        self.decoder_embed_dim = kwargs.pop("decoder_embed_dim", 768)
+    def __init__(self, verbose=True, savepath=None, **kwargs):
         self.decoder_value_embed_dim = kwargs.pop("decoder_value_embed_dim", 1280)
-        self.decoder_retention_heads = kwargs.pop("decoder_retention_heads", 3)
         self.decoder_ffn_embed_dim = kwargs.pop("decoder_ffn_embed_dim", 1280)
         self.decoder_layers = kwargs.pop("decoder_layers", 12)
         self.decoder_normalize_before = kwargs.pop("decoder_normalize_before", True)
@@ -268,6 +266,35 @@ class RetNetConfig(object):
             self.moe_normalize_gate_prob_before_dropping = True
             self.moe_second_expert_policy = "random"
             assert self.moe_freq > 0 and self.moe_expert_count > 0
+
+        self._dict = {}
+        for key, val in kwargs.items():
+            self._dict[key] = val
+
+        if verbose:
+            print(self)
+
+        if savepath is not None:
+            savepath = os.path.join(*savepath) if type(savepath) is tuple else savepath
+            pickle.dump(self, open(savepath, 'wb'))
+            print(f'Saved config to: {savepath}\n')
+
+    def __iter__(self):
+        return iter(self._dict)
+
+    def __getitem__(self, item):
+        return self._dict[item]
+
+    def __len__(self):
+        return len(self._dict)
+
+    def __getattr__(self, attr):
+        if attr == '_dict' and '_dict' not in vars(self):
+            self._dict = {}
+        try:
+            return self._dict[attr]
+        except KeyError:
+            raise AttributeError(attr)
 
     def override(self, args):
         for hp in self.__dict__.keys():

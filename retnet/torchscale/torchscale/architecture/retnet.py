@@ -8,12 +8,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from fairscale.nn import checkpoint_wrapper, wrap
-# import sys
-# from os import path
-# directory = path(__file__).abspath()
-# sys.path.append(directory.parent.parent.parent.parent)
 from trajectory.models.ein import EinLinear
-
+import pdb
 
 from torchscale.architecture.utils import init_bert_params
 from torchscale.component.droppath import DropPath
@@ -205,44 +201,51 @@ class DecoderLayer(nn.Module):
 class RetNetDecoder(nn.Module):
     def __init__(
         self,
-        args,
-        embed_tokens=None,
-        output_projection=None,
-        **kwargs
+        config,
+        # **kwargs
     ):
-        super().__init__(**kwargs)
-        self.args = args
+        super().__init__()
+        self.vocab_size = config.vocab_size
+        self.stop_token = config.vocab_size * config.transition_dim
+        self.block_size = config.block_size
+        self.observation_dim = config.observation_dim
 
-        self.dropout_module = torch.nn.Dropout(args.dropout)
+        self.action_dim = config.action_dim
+        self.transition_dim = config.transition_dim
+        self.action_weight = config.action_weight
+        self.reward_weight = config.reward_weight
+        self.value_weight = config.value_weight
 
-        embed_dim = args.decoder_embed_dim
-        self.embed_dim = embed_dim
-        self.embed_scale = 1.0 if args.no_scale_embedding else math.sqrt(embed_dim)
+        self.embed_dim = config.decoder_embed_dim
 
-        self.embed_tokens = embed_tokens
+        self.dropout_module = torch.nn.Dropout(config.dropout)
+
+        self.embed_scale = 1.0 if config.no_scale_embedding else math.sqrt(self.embed_dim)
+
+        self.embed_tokens = nn.Embedding(config.vocab_size * config.transition_dim + 1, config.decoder_embed_dim)
+
 
         if (
-            output_projection is None
-            and not args.no_output_layer
-            and args.vocab_size > 0
+            not config.no_output_layer
+            and config.vocab_size > 0
         ):
-            self.output_projection = self.build_output_projection(args)
+            self.output_projection = self.build_output_projection(config)
         else:
-            self.output_projection = output_projection
+            self.output_projection = None
 
-        if args.layernorm_embedding:
-            self.layernorm_embedding = RMSNorm(embed_dim, eps=args.layernorm_eps)
+        if config.layernorm_embedding:
+            self.layernorm_embedding = RMSNorm(self.embed_dim, eps=config.layernorm_eps)
         else:
             self.layernorm_embedding = None
 
         self.layers = nn.ModuleList([])
 
-        moe_freq = args.moe_freq
-        for i in range(args.decoder_layers):
+        moe_freq = config.moe_freq
+        for i in range(config.decoder_layers):
             is_moe_layer = moe_freq != 0 and (i + 1) % moe_freq == 0
             self.layers.append(
                 self.build_decoder_layer(
-                    args,
+                    config,
                     depth=i,
                     is_moe_layer=is_moe_layer,
                 )
@@ -250,18 +253,18 @@ class RetNetDecoder(nn.Module):
 
         self.num_layers = len(self.layers)
 
-        if args.decoder_normalize_before:
-            self.layer_norm = RMSNorm(embed_dim, eps=args.layernorm_eps)
+        if config.decoder_normalize_before:
+            self.layer_norm = RMSNorm(self.embed_dim, eps=config.layernorm_eps)
         else:
             self.layer_norm = None
 
-        self.retnet_rel_pos = RetNetRelPos(args)
-        self.chunkwise_recurrent = args.chunkwise_recurrent
-        self.recurrent_chunk_size = args.recurrent_chunk_size
+        self.retnet_rel_pos = RetNetRelPos(config)
+        self.chunkwise_recurrent = config.chunkwise_recurrent
+        self.recurrent_chunk_size = config.recurrent_chunk_size
         
 
-        if args.deepnorm:
-            init_scale = math.pow(8.0 * args.decoder_layers, 0.25)
+        if config.deepnorm:
+            init_scale = math.pow(8.0 * config.decoder_layers, 0.25)
             for name, p in self.named_parameters():
                 if (
                     "fc1" in name
@@ -273,22 +276,24 @@ class RetNetDecoder(nn.Module):
 
     def build_output_projection(
         self,
-        args,
+        config,
     ):
-        if args.share_decoder_input_output_embed:
-            output_projection = torch.nn.Linear(
-                self.embed_tokens.weight.shape[1],
-                self.embed_tokens.weight.shape[0],
-                bias=False,
-            )
-            output_projection.weight = self.embed_tokens.weight
-        else:
-            output_projection = torch.nn.Linear(
-                args.decoder_embed_dim, args.vocab_size, bias=False
-            )
-            torch.nn.init.normal_(
-                output_projection.weight, mean=0, std=args.decoder_embed_dim**-0.5
-            )
+        output_projection = EinLinear(config.transition_dim, config.decoder_embed_dim, config.vocab_size + 1, bias=False)
+        
+        # if args.share_decoder_input_output_embed:
+        #     output_projection = torch.nn.Linear(
+        #         self.embed_tokens.weight.shape[1],
+        #         self.embed_tokens.weight.shape[0],
+        #         bias=False,
+        #     )
+        #     output_projection.weight = self.embed_tokens.weight
+        # else:
+        #     output_projection = torch.nn.Linear(
+        #         args.decoder_embed_dim, args.vocab_size, bias=False
+        #     )
+        #     torch.nn.init.normal_(
+        #         output_projection.weight, mean=0, std=args.decoder_embed_dim**-0.5
+        #     )
         return output_projection
 
     def build_decoder_layer(
@@ -331,28 +336,67 @@ class RetNetDecoder(nn.Module):
             return False
         return incremental_state.get("is_first_step", False)
 
+    def offset_tokens(self, idx):
+        _, t = idx.shape
+        n_states = int(np.ceil(t / self.transition_dim))
+        offsets = torch.arange(self.transition_dim) * self.vocab_size
+        offsets = offsets.repeat(n_states).to(idx.device)
+        offset_idx = idx + offsets[:t]
+        offset_idx[idx == self.vocab_size] = self.stop_token
+        return offset_idx
+
+    def pad_to_full_observation(self, x, verify=False):
+        b, t, _ = x.shape
+        n_pad = (self.transition_dim - t % self.transition_dim) % self.transition_dim
+        padding = torch.zeros(b, n_pad, self.embed_dim, device=x.device)
+        ## [ B x T' x embedding_dim ]
+        x_pad = torch.cat([x, padding], dim=1)
+        ## [ (B * T' / transition_dim) x transition_dim x embedding_dim ]
+        x_pad = x_pad.view(-1, self.transition_dim, self.embed_dim)
+        if verify:
+            self.verify(x, x_pad)
+        return x_pad, n_pad
+
+    def verify(self, x, x_pad):
+        b, t, embedding_dim = x.shape
+        n_states = int(np.ceil(t / self.transition_dim))
+        inds = torch.arange(0, self.transition_dim).repeat(n_states)[:t]
+        for i in range(self.transition_dim):
+            x_ = x[:,inds == i]
+            t_ = x_.shape[1]
+            x_pad_ = x_pad[:,i].view(b, n_states, embedding_dim)[:,:t_]
+            print(i, x_.shape, x_pad_.shape)
+            try:
+                assert (x_ == x_pad_).all()
+            except:
+                pdb.set_trace()
+
     def forward(
         self,
-        prev_output_tokens,
+        input,
+        targets=None,
+        mask=None,
         incremental_state=None,
         features_only=False,
         return_all_hiddens=False,
         token_embeddings=None,
         **kwargs
     ):
+        b, t = input.size()
+        offset_input = self.offset_tokens(input)
         # embed tokens
         x, _ = self.forward_embedding(
-            prev_output_tokens, token_embeddings, incremental_state
+            offset_input, token_embeddings, incremental_state
         )
         is_first_step = self.is_first_step(incremental_state)
 
         
-        if self.chunkwise_recurrent and prev_output_tokens.size(1) % self.recurrent_chunk_size != 0:
-            padding_len = self.recurrent_chunk_size - prev_output_tokens.size(1) % self.recurrent_chunk_size
-            slen = prev_output_tokens.size(1) + padding_len
+        if self.chunkwise_recurrent and input.size(1) % self.recurrent_chunk_size != 0:
+            padding_len = self.recurrent_chunk_size - input.size(1) % self.recurrent_chunk_size
+            slen = input.size(1) + padding_len
             x = F.pad(x, (0, 0, 0, padding_len))
         else:
-            slen = prev_output_tokens.size(1)
+            slen = input.size(1)
         # relative position
         retention_rel_pos = self.retnet_rel_pos(slen, incremental_state is not None and not is_first_step, chunkwise_recurrent=self.chunkwise_recurrent)
         # decoder layers
@@ -378,20 +422,44 @@ class RetNetDecoder(nn.Module):
             l_aux.append(l_aux_i)
             inner_states.append(x)
             
-        if self.chunkwise_recurrent and prev_output_tokens.size(1) % self.recurrent_chunk_size != 0:
-            x = x[:, :prev_output_tokens.size(1), :]
+        if self.chunkwise_recurrent and input.size(1) % self.recurrent_chunk_size != 0:
+            x = x[:, :input.size(1), :]
 
         if self.layer_norm is not None:
             x = self.layer_norm(x)
 
-        if not features_only:
-            x = self.output_layer(x)
+        x_pad, n_pad = self.pad_to_full_observation(x)
 
-        return x, {
-            "inner_states": inner_states,
-            "l_aux": l_aux,
-            "attn": None,
-        }
+        if features_only:
+            return x_pad
+        
+        logits = self.output_layer(x_pad)
+        logits = logits.reshape(b, t + n_pad, self.vocab_size + 1)
+        logits = logits[:,:t]
+
+        # if we are given some desired targets also calculate the loss
+        if targets is not None:
+            loss = F.cross_entropy(logits.reshape(-1, logits.size(-1)), targets.view(-1), reduction='none')
+            if self.action_weight != 1 or self.reward_weight != 1 or self.value_weight != 1:
+                #### make weights
+                n_states = int(np.ceil(t / self.transition_dim))
+                weights = torch.cat([
+                    torch.ones(self.observation_dim, device=input.device),
+                    torch.ones(self.action_dim, device=input.device) * self.action_weight,
+                    torch.ones(1, device=input.device) * self.reward_weight,
+                    torch.ones(1, device=input.device) * self.value_weight,
+                ])
+                ## [ t + 1]
+                weights = weights.repeat(n_states)
+                ## [ b x t ]
+                weights = weights[1:].repeat(b, 1)
+                ####
+                loss = loss * weights.view(-1)
+            loss = (loss * mask.view(-1)).mean()
+        else:
+            loss = None
+
+        return logits, loss
 
     def output_layer(self, features):
         return self.output_projection(features)
@@ -407,8 +475,8 @@ class RetNetDecoder(nn.Module):
         # separate out all parameters to those that will and won't experience regularizing weight decay
         decay = set()
         no_decay = set()
-        whitelist_weight_modules = (torch.nn.Linear, EinLinear, RetNetDecoder, nn.ModuleList,
-                                    DecoderLayer, MultiScaleRetention, GLU, RMSNorm)
+        # TODO: Possible reason of failure: RMSNorm
+        whitelist_weight_modules = (torch.nn.Linear, EinLinear, nn.ModuleList, RMSNorm)
         blacklist_weight_modules = (torch.nn.LayerNorm, torch.nn.Embedding)
         for mn, m in self.named_modules():
             for pn, p in m.named_parameters():

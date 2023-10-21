@@ -55,7 +55,20 @@ print(
     f'(observation: {obs_dim}, action: {act_dim}) | Block size: {block_size}'
 )
 
-model_config = RetNetConfig(vocab_size=64000)
+model_config = RetNetConfig(
+    savepath=(args.savepath, 'model_config.pkl'),
+    ## discretization
+    vocab_size=args.N, block_size=block_size,
+    ## architecture
+    n_layer=args.n_layer, decoder_retention_heads=args.n_head, decoder_embed_dim=args.n_embd*args.n_head,
+    ## dimensions
+    observation_dim=obs_dim, action_dim=act_dim, transition_dim=transition_dim,
+    ## loss weighting
+    action_weight=args.action_weight, reward_weight=args.reward_weight, value_weight=args.value_weight,
+    ## dropout probabilities
+    embd_pdrop=args.embd_pdrop, resid_pdrop=args.resid_pdrop, attn_pdrop=args.attn_pdrop,
+)
+
 
 model = RetNetDecoder(model_config)
 model.to(args.device)
