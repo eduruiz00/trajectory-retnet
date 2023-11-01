@@ -102,7 +102,6 @@ trainer = trainer_config()
 #######################
 ###### main loop ######
 #######################
-
 ## scale number of epochs to keep number of updates constant
 n_epochs = int(1e6 / len(dataset) * args.n_epochs_ref)
 save_freq = int(n_epochs // args.n_saves)

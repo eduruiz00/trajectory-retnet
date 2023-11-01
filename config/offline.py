@@ -32,7 +32,7 @@ base = {
 
         'n_embd': 32,
         # 'batch_size': 256,
-        'batch_size': 4,
+        'batch_size': 16,
         'learning_rate': 6e-4,
         'lr_decay': True,
         'seed': 42,

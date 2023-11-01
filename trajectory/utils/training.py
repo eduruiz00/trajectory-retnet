@@ -1,6 +1,7 @@
 import math
 import torch
 from torch.utils.data.dataloader import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 import pdb
 
 from .timer import Timer
@@ -17,6 +18,8 @@ class Trainer:
         self.n_epochs = 0
         self.n_tokens = 0 # counter used for learning rate decay
         self.optimizer = None
+        self.writer = SummaryWriter()
+
 
     def get_optimizer(self, model):
         if self.optimizer is None:
@@ -77,5 +80,5 @@ class Trainer:
                         f'[ utils/training ] epoch {self.n_epochs} [ {it:4d} / {len(loader):4d} ] ',
                         f'train loss {loss.item():.5f} | lr {lr:.3e} | lr_mult: {lr_mult:.4f} | '
                         f't: {timer():.2f}')
-
-            self.n_epochs += 1
+                    self.writer.add_scalar('Loss/train', loss.item(), it*len(loader))
+            return losses
