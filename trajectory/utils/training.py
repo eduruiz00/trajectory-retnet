@@ -80,5 +80,5 @@ class Trainer:
                         f'[ utils/training ] epoch {self.n_epochs} [ {it:4d} / {len(loader):4d} ] ',
                         f'train loss {loss.item():.5f} | lr {lr:.3e} | lr_mult: {lr_mult:.4f} | '
                         f't: {timer():.2f}')
-                    self.writer.add_scalar('Loss/train', loss.item(), it*len(loader))
+                    self.writer.add_scalar('Loss/train', loss.item(), it*config.batch_size)
             return losses
