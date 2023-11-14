@@ -112,7 +112,7 @@ save_freq = int(n_epochs // args.n_saves)
 for epoch in range(n_epochs):
     print(f'\nEpoch: {epoch} / {n_epochs} | {args.dataset} | {args.exp_name} | time: {datetime.datetime.now()}')
 
-    trainer.train(model, dataset)
+    trainer.train(model, dataset, starting_epoch=epoch)
 
     ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
     save_epoch = epoch // save_freq * save_freq

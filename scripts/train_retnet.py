@@ -117,7 +117,7 @@ losses = []
 
 for epoch in range(n_epochs):
     print(f'\nEpoch: {epoch} / {n_epochs} | {args.dataset} | {args.exp_name} | time: {datetime.datetime.now()}')
-    losses.append(trainer.train(model, dataset))
+    losses.append(trainer.train(model, dataset, starting_epoch=epoch))
 
     ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
     save_epoch = epoch // save_freq * save_freq
