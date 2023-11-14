@@ -14,6 +14,7 @@ from trajectory.search import (
 
 class Parser(utils.Parser):
     dataset: str = 'halfcheetah-medium-expert-v2'
+    model: str = 'retnet'
     config: str = 'config.offline'
 
 #######################
@@ -26,11 +27,14 @@ args = Parser().parse_args('plan')
 ####### models ########
 #######################
 
-dataset = utils.load_from_config(args.logbase, args.dataset, args.gpt_loadpath,
+load_path = args.gpt_loadpath if args.model == "gpt" else args.retnet_loadpath
+args.exp_name = args.gpt_exp_name if args.model == "gpt" else args.retnet_exp_name
+
+dataset = utils.load_from_config(args.logbase, args.dataset, args.loadpath,
         'data_config.pkl')
 
-gpt, gpt_epoch = utils.load_model(args.logbase, args.dataset, args.gpt_loadpath,
-        epoch=args.gpt_epoch, device=args.device)
+model, model_epoch = utils.load_model(args.logbase, args.dataset, args.loadpath,
+        epoch=args.model_epoch, device=args.device)
 
 #######################
 ####### dataset #######
@@ -74,7 +78,7 @@ for t in range(T):
 
         ## sample sequence from model beginning with `prefix`
         sequence = beam_plan(
-            gpt, value_fn, prefix,
+            model, value_fn, prefix,
             args.horizon, args.beam_width, args.n_expand, observation_dim, action_dim,
             discount, args.max_context_transitions, verbose=args.verbose,
             k_obs=args.k_obs, k_act=args.k_act, cdf_obs=args.cdf_obs, cdf_act=args.cdf_act,
@@ -126,5 +130,5 @@ writer.close()
 
 ## save result as a json file
 json_path = join(args.savepath, 'rollout.json')
-json_data = {'score': score, 'step': t, 'return': total_reward, 'term': terminal, 'gpt_epoch': gpt_epoch}
+json_data = {'score': score, 'step': t, 'return': total_reward, 'term': terminal, 'model_epoch': model_epoch}
 json.dump(json_data, open(json_path, 'w'), indent=2, sort_keys=True)

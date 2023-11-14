@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     default_params = {
         'logbase': os.path.join('/doodad_tmp', azure_logpath, 'logs'),
-        'exp_name': 'gpt/azure',
+        'gpt_exp_name': 'gpt/azure',
     }
 
     sweep_function(

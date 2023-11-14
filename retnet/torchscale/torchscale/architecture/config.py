@@ -246,7 +246,7 @@ class RetNetConfig(object):
         self.layernorm_eps = kwargs.pop("layernorm_eps", 1e-6)
         # Blockwise
         self.chunkwise_recurrent = kwargs.pop("chunkwise_recurrent", False)
-        self.recurrent_chunk_size = kwargs.pop("recurrent_chunk_size", 512)
+        self.recurrent_chunk_size = kwargs.pop("recurrent_chunk_size", 40)
         # Text
         self.vocab_size = kwargs.pop("vocab_size", -1)
         # Fairscale

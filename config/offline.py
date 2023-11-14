@@ -6,6 +6,7 @@ from trajectory.utils import watch
 # gpt_expname = 'gpt/azure'
 logbase = 'pretrained/'
 gpt_expname = 'gpt/pretrained'
+retnet_expname = 'retnet/pretrained'
 
 ## automatically make experiment names for planning
 ## by labelling folders with these args
@@ -26,13 +27,13 @@ base = {
 
         ## number of epochs for a 1M-size dataset; n_epochs = 1M / dataset_size * n_epochs_ref
         'n_epochs_ref': 50,
-        'n_saves': 3,
+        'n_saves': 50,
         'logbase': logbase,
         'device': 'cuda',
 
         'n_embd': 32,
         # 'batch_size': 256,
-        'batch_size': 16,
+        'batch_size': 8,
         'learning_rate': 6e-4,
         'lr_decay': True,
         'seed': 42,
@@ -44,7 +45,8 @@ base = {
         'step': 1,
         'subsampled_sequence_length': 10,
         'termination_penalty': -100,
-        'exp_name': gpt_expname,
+        'gpt_exp_name':  gpt_expname,
+        'retnet_exp_name': retnet_expname,
 
         'discretizer': 'QuantileDiscretizer',
         'action_weight': 5,
@@ -55,7 +57,8 @@ base = {
     'plan': {
         'logbase': logbase,
         'gpt_loadpath': gpt_expname,
-        'gpt_epoch': 'latest',
+        'retnet_loadpath': retnet_expname,
+        'epoch': 'latest',
         'device': 'cuda',
         'renderer': 'Renderer',
 

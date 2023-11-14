@@ -1,5 +1,6 @@
 import math
 import torch
+import datetime
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 import pdb
@@ -27,7 +28,7 @@ class Trainer:
             self.optimizer = model.configure_optimizers(self.config)
         return self.optimizer
 
-    def train(self, model, dataset, n_epochs=1, log_freq=100):
+    def train(self, model, dataset, n_epochs=1, log_freq=100, starting_epoch=0):
 
         config = self.config
         optimizer = self.get_optimizer(model)
@@ -38,7 +39,7 @@ class Trainer:
                             batch_size=config.batch_size,
                             num_workers=config.num_workers)
 
-        for _ in range(n_epochs):
+        for epoch in range(n_epochs):
 
             losses = []
             timer = Timer()
@@ -79,6 +80,6 @@ class Trainer:
                     print(
                         f'[ utils/training ] epoch {self.n_epochs} [ {it:4d} / {len(loader):4d} ] ',
                         f'train loss {loss.item():.5f} | lr {lr:.3e} | lr_mult: {lr_mult:.4f} | '
-                        f't: {timer():.2f}')
-                    self.writer.add_scalar('Loss/train', loss.item(), it*config.batch_size)
+                        f't: {timer():.2f} | time: {datetime.datetime.now()}')
+                    self.writer.add_scalar('Loss/train', loss.item(), starting_epoch * len(loader) * config.batch_size + it*config.batch_size)
             return losses

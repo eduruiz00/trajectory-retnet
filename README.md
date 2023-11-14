@@ -106,7 +106,7 @@ docker run -it --rm --gpus all \
 	trajectory \
 	bash -c \
 	"export PYTHONPATH=$PYTHONPATH:/home/code && \
-	python /home/code/scripts/train.py --dataset hopper-medium-expert-v2 --exp_name docker/"
+	python /home/code/scripts/train.py --dataset hopper-medium-expert-v2 --gpt_exp_name docker/"
 ```
 
 ## Running on Azure

@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import torch
+import datetime
 import pdb
 
 import trajectory.utils as utils
@@ -11,14 +12,15 @@ from torchscale.architecture.retnet import RetNetDecoder
 
 class Parser(utils.Parser):
     dataset: str = 'halfcheetah-medium-expert-v2'
+    mode: str = 'parallel'
     config: str = 'config.offline'
+    exp_name: str = 'retnet/pretrained'
 
 #######################
 ######## setup ########
 #######################
 
 args = Parser().parse_args('train')
-
 #######################
 ####### dataset #######
 #######################
@@ -26,6 +28,7 @@ args = Parser().parse_args('train')
 env = datasets.load_environment(args.dataset)
 
 sequence_length = args.subsampled_sequence_length * args.step
+args.exp_name = args.retnet_exp_name 
 
 dataset_config = utils.Config(
     datasets.DiscretizedDataset,
@@ -55,6 +58,8 @@ print(
     f'(observation: {obs_dim}, action: {act_dim}) | Block size: {block_size}'
 )
 
+chunkwise_recurrent = (args.mode == 'chunkwise')
+
 model_config = RetNetConfig(
     savepath=(args.savepath, 'model_config.pkl'),
     ## discretization
@@ -67,6 +72,8 @@ model_config = RetNetConfig(
     action_weight=args.action_weight, reward_weight=args.reward_weight, value_weight=args.value_weight,
     ## dropout probabilities
     embd_pdrop=args.embd_pdrop, resid_pdrop=args.resid_pdrop, attn_pdrop=args.attn_pdrop,
+    ## training mode
+    chunkwise_recurrent=chunkwise_recurrent,
 )
 
 
@@ -109,11 +116,11 @@ save_freq = int(n_epochs // args.n_saves)
 losses = []
 
 for epoch in range(n_epochs):
-    print(f'\nEpoch: {epoch} / {n_epochs} | {args.dataset} | {args.exp_name}')
+    print(f'\nEpoch: {epoch} / {n_epochs} | {args.dataset} | {args.exp_name} | time: {datetime.datetime.now()}')
     losses.append(trainer.train(model, dataset))
 
     ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
-    save_epoch = (epoch + 1) // save_freq * save_freq
+    save_epoch = epoch // save_freq * save_freq
     statepath = os.path.join(args.savepath, f'state_{save_epoch}.pt')
     print(f'Saving model to {statepath}')
 

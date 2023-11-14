@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import torch
+import datetime
 import pdb
 
 import trajectory.utils as utils
@@ -11,6 +12,7 @@ from trajectory.models.transformers import GPT
 class Parser(utils.Parser):
     dataset: str = 'halfcheetah-medium-expert-v2'
     config: str = 'config.offline'
+    exp_name: str = 'gpt/pretrained'
 
 #######################
 ######## setup ########
@@ -25,6 +27,7 @@ args = Parser().parse_args('train')
 env = datasets.load_environment(args.dataset)
 
 sequence_length = args.subsampled_sequence_length * args.step
+args.exp_name = args.gpt_exp_name 
 
 dataset_config = utils.Config(
     datasets.DiscretizedDataset,
@@ -107,12 +110,12 @@ n_epochs = int(1e6 / len(dataset) * args.n_epochs_ref)
 save_freq = int(n_epochs // args.n_saves)
 
 for epoch in range(n_epochs):
-    print(f'\nEpoch: {epoch} / {n_epochs} | {args.dataset} | {args.exp_name}')
+    print(f'\nEpoch: {epoch} / {n_epochs} | {args.dataset} | {args.exp_name} | time: {datetime.datetime.now()}')
 
     trainer.train(model, dataset)
 
     ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
-    save_epoch = (epoch + 1) // save_freq * save_freq
+    save_epoch = epoch // save_freq * save_freq
     statepath = os.path.join(args.savepath, f'state_{save_epoch}.pt')
     print(f'Saving model to {statepath}')
 

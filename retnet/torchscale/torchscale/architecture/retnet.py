@@ -376,7 +376,7 @@ class RetNetDecoder(nn.Module):
         input,
         targets=None,
         mask=None,
-        incremental_state=None,
+        incremental_state=None, # recurrent state (S_n in the paper)
         features_only=False,
         return_all_hiddens=False,
         token_embeddings=None,
@@ -390,7 +390,6 @@ class RetNetDecoder(nn.Module):
         )
         is_first_step = self.is_first_step(incremental_state)
 
-        
         if self.chunkwise_recurrent and input.size(1) % self.recurrent_chunk_size != 0:
             padding_len = self.recurrent_chunk_size - input.size(1) % self.recurrent_chunk_size
             slen = input.size(1) + padding_len
