@@ -1,6 +1,6 @@
 import math
 import torch
-import datetime
+from datetime import datetime
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 import pdb
@@ -19,7 +19,8 @@ class Trainer:
         self.n_epochs = 0
         self.n_tokens = 0 # counter used for learning rate decay
         self.optimizer = None
-        self.writer = SummaryWriter()
+        time_str = datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
+        self.writer = SummaryWriter(log_dir=f"runs/train/{config._class.__name__}_{config.dataset}_{time_str}")
 
 
     def get_optimizer(self, model):

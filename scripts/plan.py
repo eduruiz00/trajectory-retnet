@@ -1,6 +1,7 @@
 import json
 import pdb
 from os.path import join
+from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
 
 import trajectory.utils as utils
@@ -33,7 +34,8 @@ model, model_epoch = utils.load_model(args.logbase, args.dataset, loadpath,
 if args.model == "retnet":
     model.chunkwise_recurrent = False
 
-writer = SummaryWriter()
+time_str = datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
+writer = SummaryWriter(log_dir=f"runs/plan/{args.model}_{args.dataset}_{time_str}")
 
 score, t, total_reward, terminal = evaluate(model, dataset, writer, args, render=True)
 
