@@ -210,7 +210,8 @@ class EncoderDecoderConfig(object):
                 
                 
 class RetNetConfig(object):
-    def __init__(self, verbose=True, savepath=None, **kwargs):
+    def __init__(self, _class, verbose=True, savepath=None, **kwargs):
+        self._class = _class
         self.decoder_value_embed_dim = kwargs.pop("decoder_value_embed_dim", 1280)
         self.decoder_ffn_embed_dim = kwargs.pop("decoder_ffn_embed_dim", 1280)
         self.decoder_layers = kwargs.pop("decoder_layers", 4)
@@ -300,3 +301,20 @@ class RetNetConfig(object):
         for hp in self.__dict__.keys():
             if getattr(args, hp, None) is not None:
                 self.__dict__[hp] = getattr(args, hp, None)
+
+    def __call__(self):
+        return self.make()
+
+    def make(self):
+
+        ####DEBUG###
+        if not hasattr(self,"_class"):
+            from torchscale.architecture.retnet import RetNetDecoder
+
+            return RetNetDecoder(self)
+        ####END DEBUG###
+
+        if 'retnet' in str(self._class) or 'Trainer' in str(self._class):
+            return self._class(self)
+        else:
+            return self._class(**self._dict)

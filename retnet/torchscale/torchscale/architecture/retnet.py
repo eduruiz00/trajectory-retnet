@@ -274,6 +274,9 @@ class RetNetDecoder(nn.Module):
                 ):
                     p.data.div_(init_scale)
 
+    def get_block_size(self):
+        return self.block_size
+
     def build_output_projection(
         self,
         config,

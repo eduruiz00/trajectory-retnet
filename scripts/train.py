@@ -10,7 +10,7 @@ from trajectory.models.transformers import GPT
 
 
 class Parser(utils.Parser):
-    dataset: str = 'halfcheetah-medium-expert-v2'
+    dataset: str = 'bullet-halfcheetah-medium-v0'
     config: str = 'config.offline'
     exp_name: str = 'gpt/pretrained'
 

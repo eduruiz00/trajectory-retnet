@@ -58,7 +58,7 @@ base = {
         'logbase': logbase,
         'gpt_loadpath': gpt_expname,
         'retnet_loadpath': retnet_expname,
-        'epoch': 'latest',
+        'model_epoch': 'latest',
         'device': 'cuda',
         'renderer': 'Renderer',
 
@@ -77,6 +77,8 @@ base = {
         'prefix_context': True,
 
         'vis_freq': 50,
+        'gpt_exp_name':  gpt_expname,
+        'retnet_exp_name': retnet_expname,
         'exp_name': watch(args_to_watch),
         'prefix': 'plans/defaults/',
         'suffix': '0',

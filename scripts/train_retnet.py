@@ -11,7 +11,7 @@ from torchscale.architecture.config import RetNetConfig
 from torchscale.architecture.retnet import RetNetDecoder
 
 class Parser(utils.Parser):
-    dataset: str = 'halfcheetah-medium-expert-v2'
+    dataset: str = 'bullet-halfcheetah-medium-v0'
     mode: str = 'parallel'
     config: str = 'config.offline'
     exp_name: str = 'retnet/pretrained'
@@ -60,7 +60,8 @@ print(
 
 chunkwise_recurrent = (args.mode == 'chunkwise')
 
-model_config = RetNetConfig(
+retnet_config = RetNetConfig(
+    RetNetDecoder,
     savepath=(args.savepath, 'model_config.pkl'),
     ## discretization
     vocab_size=args.N, block_size=block_size,
@@ -77,7 +78,7 @@ model_config = RetNetConfig(
 )
 
 
-model = RetNetDecoder(model_config)
+model = RetNetDecoder()
 model.to(args.device)
 
 #######################

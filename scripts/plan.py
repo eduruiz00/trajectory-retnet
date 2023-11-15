@@ -13,7 +13,7 @@ from trajectory.search import (
 )
 
 class Parser(utils.Parser):
-    dataset: str = 'halfcheetah-medium-expert-v2'
+    dataset: str = 'bullet-halfcheetah-medium-v0'
     model: str = 'retnet'
     config: str = 'config.offline'
 
@@ -27,13 +27,13 @@ args = Parser().parse_args('plan')
 ####### models ########
 #######################
 
-load_path = args.gpt_loadpath if args.model == "gpt" else args.retnet_loadpath
+loadpath = args.gpt_loadpath if args.model == "gpt" else args.retnet_loadpath
 args.exp_name = args.gpt_exp_name if args.model == "gpt" else args.retnet_exp_name
 
-dataset = utils.load_from_config(args.logbase, args.dataset, args.loadpath,
+dataset = utils.load_from_config(args.logbase, args.dataset, loadpath,
         'data_config.pkl')
 
-model, model_epoch = utils.load_model(args.logbase, args.dataset, args.loadpath,
+model, model_epoch = utils.load_model(args.logbase, args.dataset, loadpath,
         epoch=args.model_epoch, device=args.device)
 
 #######################
@@ -41,7 +41,7 @@ model, model_epoch = utils.load_model(args.logbase, args.dataset, args.loadpath,
 #######################
 
 env = datasets.load_environment(args.dataset)
-renderer = utils.make_renderer(args)
+# renderer = utils.make_renderer(args)
 timer = utils.timer.Timer()
 
 discretizer = dataset.discretizer
@@ -114,13 +114,13 @@ for t in range(T):
     writer.add_scalar('score', score, t)
 
     ## visualization
-    if t % args.vis_freq == 0 or terminal or t == T:
+    # if t % args.vis_freq == 0 or terminal or t == T:
 
         ## save current plan
-        renderer.render_plan(join(args.savepath, f'{t}_plan.mp4'), sequence_recon, env.state_vector())
+        # renderer.render_plan(join(args.savepath, f'{t}_plan.mp4'), sequence_recon, env.state_vector())
 
         ## save rollout thus far
-        renderer.render_rollout(join(args.savepath, f'rollout.mp4'), rollout, fps=80)
+        # renderer.render_rollout(join(args.savepath, f'rollout.mp4'), rollout, fps=80)
 
     if terminal: break
 
