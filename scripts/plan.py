@@ -1,6 +1,7 @@
 import json
 import pdb
 from os.path import join
+from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
 
 import trajectory.utils as utils
@@ -55,8 +56,8 @@ preprocess_fn = datasets.get_preprocess_fn(env.name)
 #######################
 ###### main loop ######
 #######################
-
-writer = SummaryWriter()
+time_str = datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
+writer = SummaryWriter(log_dir=f"runs/plan/{args.model}_{args.dataset}_{time_str}")
 
 observation = env.reset()
 total_reward = 0

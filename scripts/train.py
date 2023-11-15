@@ -98,6 +98,7 @@ trainer_config = utils.Config(
     ## dataloader
     num_workers=0,
     device=args.device,
+    dataset=args.dataset,
 )
 
 trainer = trainer_config()
