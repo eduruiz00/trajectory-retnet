@@ -1,6 +1,6 @@
 import math
 import torch
-import datetime
+from datetime import datetime
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 import pdb
