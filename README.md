@@ -1,26 +1,33 @@
-# Trajectory Transformer
+# Trajectory Transformer and Trajectory RetNet
 
 Code release for [Offline Reinforcement Learning as One Big Sequence Modeling Problem](https://arxiv.org/abs/2106.02039).
 
 **New:** Also see [Alexander Nikulin's fork](https://github.com/Howuhh/faster-trajectory-transformer) with attention caching and vectorized rollouts!
+
+Also based on the Retentive Network paper: [Retentive Network: A Successor to Transformer for Large Language Models](https://arxiv.org/abs/2307.08621)
 
 ## Installation
 
 All python dependencies are in [`environment.yml`](environment.yml). Install with:
 
 ```
-conda env create -f environment.yml
-conda activate trajectory
+conda create --name trajectory
+pip install -r pip_requirements.py
 pip install -e .
+pip install -e retnet/torchscale
 ```
 
 For reproducibility, we have also included system requirements in a [`Dockerfile`](azure/Dockerfile) (see [installation instructions](#Docker)), but the conda installation should work on most standard Linux machines.
 
 ## Usage
 
-Train a transformer with: `python scripts/train.py --dataset halfcheetah-medium-v2`
+Train a transformer with: `python scripts/train.py --dataset bullet-halfcheetah-medium-v0`
 
-To reproduce the offline RL results: `python scripts/plan.py --dataset halfcheetah-medium-v2`
+Train a RetNet with: `python scripts/train_retnet.py --dataset bullet-halfcheetah-medium-v0`
+
+To reproduce the offline RL results: `python scripts/plan.py --dataset halfcheetah-medium-v2 --model <model>`
+
+You need to change `<model>` with `retnet` to run the Retentive Network or `gpt` to run the Tranformer achitecture.
 
 By default, these commands will use the hyperparameters in [`config/offline.py`](config/offline.py). You can override them with runtime flags:
 ```
@@ -30,9 +37,27 @@ python scripts/plan.py --dataset halfcheetah-medium-v2 \
 
 A few hyperparameters are different from those listed in the paper because of changes to the discretization strategy. These hyperparameters will be updated in the next arxiv version to match what is currently in the codebase.
 
+## Retentive Networks addition
+
+We have included the Retentive Network architecture from [Torchscale](https://github.com/microsoft/torchscale/tree/main) and we have adapted it to include the default code. This code can be found on the folder `retnet/torchscale`.
+
+Some modifications have been done to adapt it for the Trajectory RL problem. The `forward` function of the `retnet/torchscale/torchscale/architecture/retnet.py` has been adapted to fit with the `forward` function from the Trajectory Transformer `GPT` class inside `trajectory/models/transformers.py`.
+
+To train the model with Retentive Networks in a parallel way can be defined by:
+
+```
+python scripts/train_retnet.py --dataset bullet-halfcheetah-v0
+```
+
+To train it in a **chunckwise** mode, you need to run:
+
+```
+python scripts/train_retnet.py --dataset bullet-halfcheetah-v0 --mode chunckwise
+```
+
 ## Pretrained models
 
-We have provided [pretrained models](https://www.dropbox.com/sh/r09lkdoj66kx43w/AACbXjMhcI6YNsn1qU4LParja?dl=0) for 16 datasets: `{halfcheetah, hopper, walker2d, ant}-{expert-v2, medium-expert-v2, medium-v2, medium-replay-v2}`. Download them with `./pretrained.sh`
+We have provided [pretrained models](https://www.dropbox.com/sh/r09lkdoj66kx43w/AACbXjMhcI6YNsn1qU4LParja?dl=0) for the Tranformer in 16 datasets: `{halfcheetah, hopper, walker2d, ant}-{expert-v2, medium-expert-v2, medium-v2, medium-replay-v2}`. Download them with `./pretrained.sh`
 
 The models will be saved in `logs/$DATASET/gpt/pretrained`. To plan with these models, refer to them using the `gpt_loadpath` flag:
 ```
