@@ -56,6 +56,8 @@ base = {
         'resume': None,
         
         'training_episode_steps': 300
+        'suffix': '0',
+        'resume': None,
     },
 
     'plan': {
