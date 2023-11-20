@@ -54,6 +54,8 @@ base = {
         'value_weight': 1,
         
         'training_episode_steps': 300
+        'suffix': '0',
+        'resume': None,
     },
 
     'plan': {

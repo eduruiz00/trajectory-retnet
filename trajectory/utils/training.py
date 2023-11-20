@@ -1,9 +1,10 @@
 import math
 import torch
-from datetime import datetime
+import datetime
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 import pdb
+import pandas as pd
 
 from .timer import Timer
 
@@ -19,9 +20,9 @@ class Trainer:
         self.n_epochs = 0
         self.n_tokens = 0 # counter used for learning rate decay
         self.optimizer = None
-        time_str = datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
+        time_str = datetime.datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
         self.writer = SummaryWriter(log_dir=f"runs/train/{config._class.__name__}_{config.dataset}_{time_str}")
-
+        self.time_table = pd.DataFrame(columns=['epoch', 'time'])
 
     def get_optimizer(self, model):
         if self.optimizer is None:
@@ -39,6 +40,8 @@ class Trainer:
         loader = DataLoader(dataset, shuffle=True, pin_memory=True,
                             batch_size=config.batch_size,
                             num_workers=config.num_workers)
+        
+        train_timer = Timer()
 
         for epoch in range(n_epochs):
 
@@ -83,4 +86,6 @@ class Trainer:
                         f'train loss {loss.item():.5f} | lr {lr:.3e} | lr_mult: {lr_mult:.4f} | '
                         f't: {timer():.2f} | time: {datetime.datetime.now()}')
                     self.writer.add_scalar('Loss/train', loss.item(), starting_epoch * len(loader) * config.batch_size + it*config.batch_size)
-            return losses
+                if it > 10:
+                    break
+            return losses, train_timer()
