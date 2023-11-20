@@ -21,11 +21,21 @@ For reproducibility, we have also included system requirements in a [`Dockerfile
 
 ## Usage
 
-Train a transformer with: `python scripts/train.py --dataset bullet-halfcheetah-medium-v0`
+Train a transformer with:
 
-Train a RetNet with: `python scripts/train_retnet.py --dataset bullet-halfcheetah-medium-v0`
+```
+python scripts/train.py --dataset bullet-halfcheetah-medium-v0
+```
 
-To reproduce the offline RL results: `python scripts/plan.py --dataset halfcheetah-medium-v2 --model <model>`
+Train a RetNet with: 
+```
+python scripts/train_retnet.py --dataset bullet-halfcheetah-medium-v0
+```
+
+To reproduce the offline RL results: 
+```
+python scripts/plan.py --dataset halfcheetah-medium-v2 --model <model>
+```
 
 You need to change `<model>` with `retnet` to run the Retentive Network or `gpt` to run the Tranformer achitecture.
 
@@ -36,6 +46,19 @@ python scripts/plan.py --dataset halfcheetah-medium-v2 \
 ```
 
 A few hyperparameters are different from those listed in the paper because of changes to the discretization strategy. These hyperparameters will be updated in the next arxiv version to match what is currently in the codebase.
+
+## Branches
+
+The project incorporates various branches at different stages to address the problem from different perspectives. Here is a description of the content in each branch:
+
+- `combining`: This serves as the primary branch of the project, encompassing code for both methods—the Trajectory Transformer and the Retentive Network. The primary structural changes to the project are implemented in this branch.
+
+- `master`: This branch exclusively contains the code for the Trajectory Transformer, excluding any Retentive Network code. It is currently outdated, reflecting only minor adjustments made to adapt it for the combined use of both models.
+
+- `comments_retnet`: In this branch, you will find comments providing dimensions and explanations for the forward function of the Retentive Network. These comments were added to enhance understanding and aid in debugging the code.
+
+- `time_analysis`: The time analysis branch was created to assess the duration of different methods and debug the model sizes. This auxiliary branch was generated to keep information separate from the main branch and to facilitate testing in isolation.
+
 
 ## Retentive Networks addition
 
@@ -171,12 +194,27 @@ To mount the storage container:
 To unmount the container, run `sudo umount -f ~/azure_mount; rm -r ~/azure_mount`
 
 ## Reference
+
+Trajectory Transformer reference:
+
 ```
 @inproceedings{janner2021sequence,
   title = {Offline Reinforcement Learning as One Big Sequence Modeling Problem},
   author = {Michael Janner and Qiyang Li and Sergey Levine},
   booktitle = {Advances in Neural Information Processing Systems},
   year = {2021},
+}
+```
+
+Retentive Network reference:
+```
+@misc{sun2023retentive,
+      title={Retentive Network: A Successor to Transformer for Large Language Models}, 
+      author={Yutao Sun and Li Dong and Shaohan Huang and Shuming Ma and Yuqing Xia and Jilong Xue and Jianyong Wang and Furu Wei},
+      year={2023},
+      eprint={2307.08621},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL}
 }
 ```
 

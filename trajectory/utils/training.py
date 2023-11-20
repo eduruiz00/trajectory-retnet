@@ -9,10 +9,15 @@ import pandas as pd
 from .timer import Timer
 
 def to(xs, device):
+    """
+        Transfer a list of tensors to the device
+    """
     return [x.to(device) for x in xs]
 
 class Trainer:
-
+    """
+    Trainer class for training a model
+    """
     def __init__(self, config):
         self.config = config
         self.device = config.device
@@ -25,13 +30,18 @@ class Trainer:
         self.time_table = pd.DataFrame(columns=['epoch', 'time'])
 
     def get_optimizer(self, model):
+        """
+            Make optimizer if it doesn't exist
+        """
         if self.optimizer is None:
             print(f'[ utils/training ] Making optimizer at epoch {self.n_epochs}')
             self.optimizer = model.configure_optimizers(self.config)
         return self.optimizer
 
     def train(self, model, dataset, n_epochs=1, log_freq=100, starting_epoch=0):
-
+        """
+        Train the model for n_epochs
+        """
         config = self.config
         optimizer = self.get_optimizer(model)
         model.train(True)

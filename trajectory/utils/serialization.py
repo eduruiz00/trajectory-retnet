@@ -7,9 +7,10 @@ import json
 import torch
 import pdb
 
+
 def mkdir(savepath, prune_fname=False):
     """
-        returns `True` iff `savepath` is created
+    returns `True` iff `savepath` is created
     """
     if prune_fname:
         savepath = os.path.dirname(savepath)
@@ -23,7 +24,11 @@ def mkdir(savepath, prune_fname=False):
     else:
         return False
 
+
 def get_latest_epoch(loadpath):
+    """
+    Get the latest epoch from a directory of saved states.
+    """
     states = glob.glob1(loadpath, 'state_*')
     latest_epoch = -1
     for state in states:
@@ -31,7 +36,11 @@ def get_latest_epoch(loadpath):
         latest_epoch = max(epoch, latest_epoch)
     return latest_epoch
 
+
 def load_model(*loadpath, epoch=None, device='cuda:0'):
+    """
+    Load a model from a directory of saved states.
+    """
     loadpath = os.path.join(*loadpath)
     config_path = os.path.join(loadpath, 'model_config.pkl')
 
@@ -53,18 +62,30 @@ def load_model(*loadpath, epoch=None, device='cuda:0'):
 
     return model, epoch
 
+
 def load_config(*loadpath):
+    """
+    Load a config from a pickle file.
+    """
     loadpath = os.path.join(*loadpath)
     config = pickle.load(open(loadpath, 'rb'))
     print(f'[ utils/serialization ] Loaded config from {loadpath}')
     print(config)
     return config
 
+
 def load_from_config(*loadpath):
+    """
+    Load a config and make an instance of the class.
+    """
     config = load_config(*loadpath)
     return config.make()
 
+
 def load_args(*loadpath):
+    """
+    Load a config and make an instance of the class.
+    """
     from .setup import Parser
     loadpath = os.path.join(*loadpath)
     args_path = os.path.join(loadpath, 'args.json')

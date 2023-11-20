@@ -3,7 +3,11 @@ from collections.abc import Mapping
 import pickle
 
 class Config(Mapping):
-
+    """
+    Config class that can be used to save and load configurations for
+    experiments. The config is saved as a pickle file, and can be loaded
+    using the load method.
+    """
     def __init__(self, _class, verbose=True, savepath=None, **kwargs):
         self._class = _class
         self._dict = {}
@@ -20,7 +24,9 @@ class Config(Mapping):
             print(f'Saved config to: {savepath}\n')
 
     def load(self, loadpath):
-        """Load config from a pickle file."""
+        """
+        Load config from a pickle file.
+        """
         loadpath = os.path.join(*loadpath) if type(loadpath) is tuple else loadpath
         config = pickle.load(open(loadpath, 'rb'))
         self._class = config._class
@@ -55,6 +61,9 @@ class Config(Mapping):
             raise AttributeError(attr)
 
     def make(self):
+        """
+        Make an instance of the class with the given configuration.
+        """
         if 'GPT' in str(self._class) or 'Trainer' in str(self._class):
             ## GPT class expects the config as the sole input
             return self._class(self)

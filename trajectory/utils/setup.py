@@ -16,12 +16,18 @@ from .git_utils import (
 )
 
 def set_seed(seed):
+    """
+    Set random seed for reproducibility.
+    """
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
 def watch(args_to_watch):
+    """
+    Generate experiment name from args
+    """
     def _fn(args):
         exp_name = []
         for key, label in args_to_watch:
@@ -35,13 +41,21 @@ def watch(args_to_watch):
     return _fn
 
 class Parser(Tap):
-
+    """
+    Parser class for parsing command-line arguments
+    """
     def save(self):
+        """
+        Save command-line arguments to a json file
+        """
         fullpath = os.path.join(self.savepath, 'args.json')
         print(f'[ utils/setup ] Saved args to {fullpath}')
         super().save(fullpath, skip_unpicklable=True)
 
     def parse_args(self, experiment=None):
+        """
+        Parse command-line arguments and set seed
+        """
         args = super().parse_args(known_only=True)
         ## if not loading from a config script, skip the result of the setup
         if not hasattr(args, 'config'): return args
@@ -56,7 +70,7 @@ class Parser(Tap):
 
     def read_config(self, args, experiment):
         '''
-            Load parameters from config file
+        Load parameters from config file
         '''
         dataset = args.dataset.replace('-', '_')
         print(f'[ utils/setup ] Reading config: {args.config}:{dataset}')
@@ -77,7 +91,7 @@ class Parser(Tap):
 
     def add_extras(self, args):
         '''
-            Override config parameters with command-line arguments
+        Override config parameters with command-line arguments
         '''
         extras = args.extra_args
         if not len(extras):
@@ -103,11 +117,17 @@ class Parser(Tap):
             setattr(args, key, val)
 
     def set_seed(self, args):
+        """
+        Set random seed for reproducibility.
+        """
         if not 'seed' in dir(args):
             return
         set_seed(args.seed)
 
     def generate_exp_name(self, args):
+        """
+        Generate experiment name from args
+        """
         if not 'exp_name' in dir(args):
             return
         exp_name = getattr(args, 'exp_name')
@@ -117,6 +137,9 @@ class Parser(Tap):
             setattr(args, 'exp_name', exp_name_string)
 
     def mkdir(self, args):
+        """
+        Make savepath and save args
+        """
         if 'logbase' in dir(args) and 'dataset' in dir(args) and 'exp_name' in dir(args):
             args.savepath = os.path.join(args.logbase, args.dataset, args.exp_name)
             if 'suffix' in dir(args):
@@ -127,9 +150,15 @@ class Parser(Tap):
             self.save()
 
     def get_commit(self, args):
+        """
+        Get git commit hash
+        """
         args.commit = get_git_rev()
 
     def save_diff(self, args):
+        """
+        Save git diff to disk
+        """
         try:
             save_git_diff(os.path.join(args.savepath, 'diff.txt'))
         except:
