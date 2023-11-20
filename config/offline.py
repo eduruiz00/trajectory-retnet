@@ -18,7 +18,6 @@ args_to_watch = [
 ]
 
 base = {
-
     'train': {
         'N': 100,
         'discount': 0.99,
