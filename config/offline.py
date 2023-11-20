@@ -52,6 +52,8 @@ base = {
         'action_weight': 5,
         'reward_weight': 1,
         'value_weight': 1,
+        'suffix': '0',
+        'resume': None,
     },
 
     'plan': {

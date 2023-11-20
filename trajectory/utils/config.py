@@ -19,6 +19,14 @@ class Config(Mapping):
             pickle.dump(self, open(savepath, 'wb'))
             print(f'Saved config to: {savepath}\n')
 
+    def load(self, loadpath):
+        """Load config from a pickle file."""
+        loadpath = os.path.join(*loadpath) if type(loadpath) is tuple else loadpath
+        config = pickle.load(open(loadpath, 'rb'))
+        self._class = config._class
+        self._dict = config._dict
+        print(f'Loaded config from: {loadpath}\n')
+
     def __repr__(self):
         string = f'\nConfig: {self._class}\n'
         for key in sorted(self._dict.keys()):

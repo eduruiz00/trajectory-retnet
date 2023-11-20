@@ -5,6 +5,8 @@ import numpy as np
 import torch
 from tap import Tap
 import pdb
+import datetime
+import json
 
 from .serialization import mkdir
 from .arrays import set_device
@@ -48,7 +50,7 @@ class Parser(Tap):
         self.set_seed(args)
         self.get_commit(args)
         self.generate_exp_name(args)
-        self.mkdir(args)
+        self.mkdir(args)    
         self.save_diff(args)
         return args
 
@@ -118,7 +120,8 @@ class Parser(Tap):
         if 'logbase' in dir(args) and 'dataset' in dir(args) and 'exp_name' in dir(args):
             args.savepath = os.path.join(args.logbase, args.dataset, args.exp_name)
             if 'suffix' in dir(args):
-                args.savepath = os.path.join(args.savepath, args.suffix)
+                date_str = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+                args.savepath = os.path.join(args.savepath, date_str)
             if mkdir(args.savepath):
                 print(f'[ utils/setup ] Made savepath: {args.savepath}')
             self.save()

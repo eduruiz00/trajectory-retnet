@@ -3,8 +3,10 @@ import numpy as np
 import torch
 import datetime
 import pdb
+import pandas as pd
 
 import trajectory.utils as utils
+from trajectory.utils.timer import Timer
 import trajectory.datasets as datasets
 from trajectory.models.transformers import GPT
 
@@ -27,7 +29,7 @@ args = Parser().parse_args('train')
 env = datasets.load_environment(args.dataset)
 
 sequence_length = args.subsampled_sequence_length * args.step
-args.exp_name = args.gpt_exp_name 
+args.exp_name = args.gpt_exp_name
 
 dataset_config = utils.Config(
     datasets.DiscretizedDataset,
@@ -110,10 +112,13 @@ trainer = trainer_config()
 n_epochs = int(1e6 / len(dataset) * args.n_epochs_ref)
 save_freq = int(n_epochs // args.n_saves)
 
+df_times = pd.DataFrame(columns=['epoch', 'time_trainer', 'time_epoch', 'acc_time'])
+
+training_timer = Timer()
 for epoch in range(n_epochs):
     print(f'\nEpoch: {epoch} / {n_epochs} | {args.dataset} | {args.exp_name} | time: {datetime.datetime.now()}')
 
-    trainer.train(model, dataset, starting_epoch=epoch)
+    losses, time = trainer.train(model, dataset, starting_epoch=epoch)
 
     ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
     save_epoch = epoch // save_freq * save_freq
@@ -123,3 +128,12 @@ for epoch in range(n_epochs):
     ## save state to disk
     state = model.state_dict()
     torch.save(state, statepath)
+
+    acc_time, epoch_time = training_timer(flag=True)
+    df_times = pd.concat([df_times, pd.DataFrame({
+        'epoch': [epoch],
+        'time_trainer (s)': [time],
+        'time_epoch (s)': [epoch_time],
+        'acc_time (min)': [acc_time / 60],
+    })], ignore_index=True)
+    df_times.to_csv(os.path.join(args.savepath, 'time_table.csv'))
