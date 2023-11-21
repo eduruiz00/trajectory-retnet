@@ -3,9 +3,19 @@ import torch
 import pdb
 
 from .. import utils
-from .sampling import sample_n, get_logp, sort_2d
+from .sampling import sample_n, get_logp, sort_2d, sample
 
 REWARD_DIM = VALUE_DIM = 1
+
+def expand_incremental_state(incremental_state, n_expand):
+    for i in range(len(incremental_state.keys())-1):
+        incremental_state[i]['prev_key_value'] = incremental_state[i]["prev_key_value"].repeat(n_expand,1,1,1)
+    return incremental_state
+
+def shrink_incremental_state(incremental_state, inds):
+    for i in range(len(incremental_state.keys())-1):
+        incremental_state[i]['prev_key_value'] = incremental_state[i]["prev_key_value"][inds]
+    return incremental_state
 
 @torch.no_grad()
 def beam_plan(
@@ -42,18 +52,23 @@ def beam_plan(
 
     ## logging
     progress = utils.Progress(n_steps) if verbose else utils.Silent()
-
+    incremental_state = {"is_first_step": True}
+    for n in range(x.shape[1]-1):
+        x_n = x[:, :n+1]
+        _, _ = sample(model, x_n, incremental_state=incremental_state, **sample_kwargs)
+        incremental_state['is_first_step'] = False
+    
     for t in range(n_steps):
         ## repeat everything by `n_expand` before we sample actions
         x = x.repeat(n_expand, 1)
         rewards = rewards.repeat(n_expand, 1)
+        incremental_state = expand_incremental_state(incremental_state, n_expand)
 
         ## sample actions
-        x, _ = sample_n(model, x, action_dim, topk=k_act, cdf=cdf_act, **sample_kwargs)
+        x, _, incremental_state = sample_n(model, x, action_dim, incremental_state=incremental_state, topk=k_act, cdf=cdf_act, **sample_kwargs)
 
         ## sample reward and value estimate
-        x, r_probs = sample_n(model, x, REWARD_DIM + VALUE_DIM, topk=k_rew, cdf=cdf_rew, **sample_kwargs)
-
+        x, r_probs, incremental_state = sample_n(model, x, REWARD_DIM + VALUE_DIM, incremental_state=incremental_state, topk=k_rew, cdf=cdf_rew, **sample_kwargs)
         ## optionally, use a percentile or mean of the reward and
         ## value distributions instead of sampled tokens
         r_t, V_t = value_fn(r_probs)
@@ -67,14 +82,14 @@ def beam_plan(
 
         ## get `beam_width` best actions
         values, inds = torch.topk(values, beam_width)
-
         ## index into search candidates to retain `beam_width` highest-reward sequences
         x = x[inds]
         rewards = rewards[inds]
+        incremental_state = shrink_incremental_state(incremental_state, inds)
 
         ## sample next observation (unless we have reached the end of the planning horizon)
         if t < n_steps - 1:
-            x, _ = sample_n(model, x, observation_dim, topk=k_obs, cdf=cdf_obs, **sample_kwargs)
+            x, _, incremental_state = sample_n(model, x, observation_dim, incremental_state=incremental_state, topk=k_obs, cdf=cdf_obs, **sample_kwargs)
 
         ## logging
         progress.update({

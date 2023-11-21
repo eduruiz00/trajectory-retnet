@@ -35,7 +35,7 @@ class RetNetRelPos(nn.Module):
         if activate_recurrent:
             sin = torch.sin(self.angle * (slen - 1))
             cos = torch.cos(self.angle * (slen - 1))
-            retention_rel_pos = ((sin, cos), self.decay.exp())
+            retention_rel_pos = ((sin, cos), self.decay.exp().view(-1, 1, 1))
         elif chunkwise_recurrent:
             index = torch.arange(slen).to(self.decay)
             sin = torch.sin(index[:, None] * self.angle[None, :])
@@ -65,7 +65,7 @@ class RetNetRelPos(nn.Module):
             mask = torch.masked_fill(index[:, None] - index[None, :], ~mask.bool(), float("inf"))
             mask = torch.exp(mask * self.decay[:, None, None])
             mask = torch.nan_to_num(mask)
-            mask = mask / mask.sum(dim=-1, keepdim=True).sqrt()
+            mask = mask / mask.sum(dim=-1, keepdim=True).sqrt() # Why?
             retention_rel_pos = ((sin, cos), mask)
 
         return retention_rel_pos
@@ -348,17 +348,20 @@ class RetNetDecoder(nn.Module):
         offset_idx[idx == self.vocab_size] = self.stop_token
         return offset_idx
 
-    def pad_to_full_observation(self, x, verify=False):
+    def pad_to_full_observation(self, x, input, verify=False):
+        b, t_total = input.shape
         b, t, _ = x.shape
-        n_pad = (self.transition_dim - t % self.transition_dim) % self.transition_dim
-        padding = torch.zeros(b, n_pad, self.embed_dim, device=x.device)
+        n_pad_after = (self.transition_dim - t_total % self.transition_dim) % self.transition_dim
+        n_pad_before = t_total - t
+        padding_after = torch.zeros(b, n_pad_after, self.embed_dim, device=x.device)
+        padding_before = torch.zeros(b, n_pad_before, self.embed_dim, device=x.device)
         ## [ B x T' x embedding_dim ]
-        x_pad = torch.cat([x, padding], dim=1)
+        x_pad = torch.cat([padding_before, x, padding_after], dim=1)
         ## [ (B * T' / transition_dim) x transition_dim x embedding_dim ]
         x_pad = x_pad.view(-1, self.transition_dim, self.embed_dim)
         if verify:
             self.verify(x, x_pad)
-        return x_pad, n_pad
+        return x_pad, n_pad_after
 
     def verify(self, x, x_pad):
         b, t, embedding_dim = x.shape
@@ -405,7 +408,6 @@ class RetNetDecoder(nn.Module):
         inner_states = [x]
 
         l_aux = []
-
         for idx, layer in enumerate(self.layers):
             if incremental_state is None or is_first_step:
                 if is_first_step and incremental_state is not None:
@@ -430,14 +432,17 @@ class RetNetDecoder(nn.Module):
         if self.layer_norm is not None:
             x = self.layer_norm(x)
 
-        x_pad, n_pad = self.pad_to_full_observation(x)
+        x_pad, n_pad = self.pad_to_full_observation(x, input)
 
         if features_only:
             return x_pad
-        
+
         logits = self.output_layer(x_pad)
         logits = logits.reshape(b, t + n_pad, self.vocab_size + 1)
-        logits = logits[:,:t]
+        if incremental_state is not None:
+            logits = logits[:,t-1:t]
+        else:
+            logits = logits[:,:t]
 
         # if we are given some desired targets also calculate the loss
         if targets is not None:

@@ -36,6 +36,8 @@ dataset = utils.load_from_config(args.logbase, args.dataset, loadpath,
 model, model_epoch = utils.load_model(args.logbase, args.dataset, loadpath,
         epoch=args.model_epoch, device=args.device)
 
+if args.model == "retnet":
+    model.chunkwise_recurrent = False
 #######################
 ####### dataset #######
 #######################
