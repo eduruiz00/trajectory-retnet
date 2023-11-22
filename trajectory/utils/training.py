@@ -96,6 +96,4 @@ class Trainer:
                         f'train loss {loss.item():.5f} | lr {lr:.3e} | lr_mult: {lr_mult:.4f} | '
                         f't: {timer():.2f} | time: {datetime.datetime.now()}')
                     self.writer.add_scalar('Loss/train', loss.item(), starting_epoch * len(loader) * config.batch_size + it*config.batch_size)
-                if it > 10:
-                    break
             return losses, train_timer()
