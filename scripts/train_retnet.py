@@ -78,8 +78,11 @@ retnet_config = RetNetConfig(
 )
 
 
-model = RetNetDecoder()
+model = RetNetDecoder(retnet_config)
 model.to(args.device)
+print(f'Number of parameters: {sum(p.numel() for p in model.parameters())}')
+for name, param in model.named_parameters():
+    print(f"{name}: {param.shape}")
 
 #######################
 ####### trainer #######

@@ -27,7 +27,7 @@ args = Parser().parse_args('train')
 env = datasets.load_environment(args.dataset)
 
 sequence_length = args.subsampled_sequence_length * args.step
-args.exp_name = args.gpt_exp_name 
+args.exp_name = args.gpt_exp_name
 
 dataset_config = utils.Config(
     datasets.DiscretizedDataset,
@@ -74,6 +74,7 @@ model_config = utils.Config(
 
 model = model_config()
 model.to(args.device)
+print(f'Number of parameters: {sum(p.numel() for p in model.parameters())}')
 
 #######################
 ####### trainer #######
