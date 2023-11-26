@@ -213,7 +213,7 @@ class RetNetConfig(object):
     def __init__(self, _class, verbose=True, savepath=None, **kwargs):
         self._class = _class
         self.decoder_value_embed_dim = kwargs.pop("decoder_value_embed_dim", 128)
-        self.decoder_ffn_embed_dim = kwargs.pop("decoder_ffn_embed_dim", 128)
+        self.decoder_ffn_embed_dim = kwargs.pop("decoder_ffn_embed_dim", 512)
         self.decoder_layers = kwargs.pop("decoder_layers", 4)
         self.decoder_normalize_before = kwargs.pop("decoder_normalize_before", True)
         self.activation_fn = kwargs.pop("activation_fn", "gelu")
