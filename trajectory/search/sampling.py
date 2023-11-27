@@ -50,7 +50,6 @@ def sort_2d(x):
     return x_sort, rows, cols
 
 #-------------------------------- forward pass --------------------------------#
-
 def forward(model, x, max_block=None, allow_crop=True, crop_increment=None, **kwargs):
     '''
         A wrapper around a single forward pass of the transformer.
@@ -136,7 +135,7 @@ def sample(model, x, temperature=1.0, topk=None, cdf=None, **forward_kwargs):
     return indices, raw_probs
 
 @torch.no_grad()
-def sample_n(model, x, N, **sample_kwargs):
+def sample_n(model, x, N, incremental_state=None, **sample_kwargs):
     batch_size = len(x)
 
     ## keep track of probabilities from each step;
@@ -144,7 +143,7 @@ def sample_n(model, x, N, **sample_kwargs):
     probs = torch.zeros(batch_size, N, model.vocab_size + 1, device=x.device)
 
     for n in range(N):
-        indices, p = sample(model, x, **sample_kwargs)
+        indices, p = sample(model, x, incremental_state=incremental_state, **sample_kwargs)
 
         ## append to the sequence and continue
         ## [ batch_size x (sequence_length + n) ]
@@ -152,4 +151,4 @@ def sample_n(model, x, N, **sample_kwargs):
 
         probs[:, n] = p
 
-    return x, probs
+    return x, probs, incremental_state

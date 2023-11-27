@@ -93,14 +93,13 @@ class MultiScaleRetention(nn.Module):
         incremental_state
     ):
         bsz = v.size(0)
-
         v = v.view(bsz, self.num_heads, self.head_dim, 1)
         kv = kr * v
         if "prev_key_value" in incremental_state:
             prev_kv = incremental_state["prev_key_value"]
             prev_scale = incremental_state["scale"]
             scale = prev_scale * decay + 1
-            kv = prev_kv * (prev_scale.sqrt() * decay / scale.sqrt()).view(self.num_heads, 1, 1) + kv / scale.sqrt().view(self.num_heads, 1, 1)
+            kv = prev_kv * (prev_scale.sqrt() * decay / scale.sqrt()).view(self.num_heads, 1, 1) + kv / scale.sqrt().view(self.num_heads, 1, 1) # why?
             # kv = prev_kv * decay.view(self.num_heads, 1, 1) + kv
         else:
             scale = torch.ones_like(decay)
@@ -185,7 +184,6 @@ class MultiScaleRetention(nn.Module):
 
         qr = theta_shift(q, sin, cos)
         kr = theta_shift(k, sin, cos)
-
         if incremental_state is not None:
             output = self.recurrent_forward(qr, kr, v, inner_mask, incremental_state)
         elif chunkwise_recurrent:

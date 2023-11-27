@@ -8,7 +8,7 @@ import mujoco_py as mjc
 import pdb
 
 from .arrays import to_np
-from .video import save_video, save_videos
+from .video import save_video, save_videos, save_video_tensorboard
 from ..datasets import load_environment, get_preprocess_fn
 
 def make_renderer(args):
@@ -131,7 +131,7 @@ class Renderer:
             images.append(img)
         return np.stack(images, axis=0)
 
-    def render_plan(self, savepath, sequence, state, fps=30):
+    def render_plan(self, savepath, summary_writer, sequence, state, to_tensorboard_only=False, fps=30, **kwargs):
         '''
             state : np.array[ observation_dim ]
             sequence : np.array[ horizon x transition_dim ]
@@ -152,11 +152,13 @@ class Renderer:
             self.renders(rollout_states),
         ]
 
-        save_videos(savepath, *videos, fps=fps)
+        save_videos(savepath, summary_writer, *videos, to_tensorboard_only=to_tensorboard_only, fps=fps, **kwargs)
 
-    def render_rollout(self, savepath, states, **video_kwargs):
+    def render_rollout(self, savepath, summary_writer, states, to_tensorboard_only=False, **video_kwargs):
         images = self(states)
-        save_video(savepath, images, **video_kwargs)
+        if not to_tensorboard_only:
+            save_video(savepath, images, **video_kwargs)
+        save_video_tensorboard(summary_writer, images, **video_kwargs)
 
 class KitchenRenderer:
 

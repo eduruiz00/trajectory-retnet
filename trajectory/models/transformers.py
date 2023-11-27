@@ -200,7 +200,7 @@ class GPT(nn.Module):
             except:
                 pdb.set_trace()
 
-    def forward(self, idx, targets=None, mask=None):
+    def forward(self, idx, targets=None, mask=None, **unused_kwargs):
         """
             idx : [ B x T ]
             values : [ B x 1 x 1 ]
