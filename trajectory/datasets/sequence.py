@@ -33,7 +33,7 @@ def segment(observations, terminals, max_path_length):
 
     ## pad trajectories to be of equal length
     trajectories_pad = np.zeros((n_trajectories, max_path_length, observation_dim), dtype=trajectories[0].dtype)
-    early_termination = np.zeros((n_trajectories, max_path_length), dtype=np.bool)
+    early_termination = np.zeros((n_trajectories, max_path_length), dtype=bool)
     for i, traj in enumerate(trajectories):
         path_length = path_lengths[i]
         trajectories_pad[i,:path_length] = traj
@@ -124,7 +124,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         ], axis=1)
         self.termination_flags = np.concatenate([
             self.termination_flags,
-            np.ones((n_trajectories, sequence_length-1), dtype=np.bool),
+            np.ones((n_trajectories, sequence_length-1), dtype=bool),
         ], axis=1)
 
     def __len__(self):
