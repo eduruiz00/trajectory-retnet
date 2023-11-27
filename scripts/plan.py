@@ -43,7 +43,7 @@ if args.model == "retnet":
 #######################
 
 env = datasets.load_environment(args.dataset)
-# renderer = utils.make_renderer(args)
+renderer = utils.make_renderer(args)
 timer = utils.timer.Timer()
 
 discretizer = dataset.discretizer
@@ -115,14 +115,14 @@ for t in range(T):
     writer.add_scalar('total_reward', total_reward, t)
     writer.add_scalar('score', score, t)
 
-    ## visualization
-    # if t % args.vis_freq == 0 or terminal or t == T:
+    # visualization
+    if t % args.vis_freq == 0 or terminal or t == T:
 
-        ## save current plan
-        # renderer.render_plan(join(args.savepath, f'{t}_plan.mp4'), sequence_recon, env.state_vector())
+        # save current plan
+        renderer.render_plan(join(args.savepath, f'{t}_plan.mp4'), writer, sequence_recon, env.state_vector(), to_tensorboard_only=True)
 
-        ## save rollout thus far
-        # renderer.render_rollout(join(args.savepath, f'rollout.mp4'), rollout, fps=80)
+        # save rollout thus far
+        renderer.render_rollout(join(args.savepath, f'rollout.mp4'), rollout, fps=80)
 
     if terminal: break
 

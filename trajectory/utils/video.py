@@ -23,7 +23,12 @@ def save_video(filename, video_frames, fps=60, video_format='mp4'):
         }
     )
 
-def save_videos(filename, *video_frames, **kwargs):
+def save_video_tensorboard(summary_writer, video_frames, tag="plan"):
+    summary_writer.add_video(tag, video_frames)
+
+def save_videos(filename, summary_writer, *video_frames, to_tensorboard_only=False, **kwargs):
     ## video_frame : [ N x H x W x C ]
     video_frames = np.concatenate(video_frames, axis=2)
-    save_video(filename, video_frames, **kwargs)
+    if not to_tensorboard_only:
+        save_video(filename, video_frames, **kwargs)
+    save_video_tensorboard(summary_writer, video_frames)
