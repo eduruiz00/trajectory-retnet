@@ -7,7 +7,7 @@ import pdb
 import trajectory.utils as utils
 import trajectory.datasets as datasets
 from trajectory.models.transformers import GPT
-
+from evaluation import evaluate
 
 class Parser(utils.Parser):
     dataset: str = 'bullet-halfcheetah-medium-v0'
@@ -19,6 +19,7 @@ class Parser(utils.Parser):
 #######################
 
 args = Parser().parse_args('train')
+plan_args = Parser().parse_args('plan')
 
 #######################
 ####### dataset #######
@@ -115,6 +116,7 @@ for epoch in range(n_epochs):
 
     trainer.train(model, dataset, starting_epoch=epoch)
 
+    evaluate(model, dataset, trainer.writer, plan_args, training_epoch=epoch, max_episode_steps=args.training_episode_steps, render=False)
     ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
     save_epoch = epoch // save_freq * save_freq
     statepath = os.path.join(args.savepath, f'state_{save_epoch}.pt')

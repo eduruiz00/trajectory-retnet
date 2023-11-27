@@ -52,6 +52,8 @@ base = {
         'action_weight': 5,
         'reward_weight': 1,
         'value_weight': 1,
+        
+        'training_episode_steps': 300
     },
 
     'plan': {
@@ -76,7 +78,7 @@ base = {
         'max_context_transitions': 5,
         'prefix_context': True,
 
-        'vis_freq': 50,
+        'vis_freq': 1,
         'gpt_exp_name':  gpt_expname,
         'retnet_exp_name': retnet_expname,
         'exp_name': watch(args_to_watch),

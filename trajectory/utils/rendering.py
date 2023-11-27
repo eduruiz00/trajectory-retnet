@@ -131,7 +131,7 @@ class Renderer:
             images.append(img)
         return np.stack(images, axis=0)
 
-    def render_plan(self, savepath, summary_writer, sequence, state, to_tensorboard_only=False, fps=30):
+    def render_plan(self, savepath, summary_writer, sequence, state, to_tensorboard_only=False, fps=30, **kwargs):
         '''
             state : np.array[ observation_dim ]
             sequence : np.array[ horizon x transition_dim ]
@@ -152,13 +152,13 @@ class Renderer:
             self.renders(rollout_states),
         ]
 
-        save_videos(savepath, summary_writer, *videos, to_tensorboard_only, fps=fps)
+        save_videos(savepath, summary_writer, *videos, to_tensorboard_only=to_tensorboard_only, fps=fps, **kwargs)
 
     def render_rollout(self, savepath, summary_writer, states, to_tensorboard_only=False, **video_kwargs):
         images = self(states)
         if not to_tensorboard_only:
             save_video(savepath, images, **video_kwargs)
-        save_video_tensorboard(summary_writer, images)
+        save_video_tensorboard(summary_writer, images, **video_kwargs)
 
 class KitchenRenderer:
 
