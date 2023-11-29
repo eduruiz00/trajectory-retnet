@@ -1,0 +1,31 @@
+## Starting GPU test on node859
+## Loading module
+## Number of available CUDA devices: 0
+Conda environment: trajectory
+[/bin/bash] #### Starting Python test
+[/bin/bash] ## This is s3686140 on node859 and this job has the ID 2056408
+[/bin/bash] ## current working directory: /home/s3686140/data1/sadrl-project
+[/bin/bash] ## Run script
+pybullet build time: May 20 2022 19:44:17
+[ utils/setup ] Reading config: config.offline:bullet_halfcheetah_medium_v0
+[ utils/setup ] Not using overrides | config: config.offline | dataset: bullet_halfcheetah_medium_v0
+[ utils/setup ] Setting exp_name to: plans/defaults/freq1_H15_beam128
+[ utils/setup ] Saved args to pretrained/bullet-halfcheetah-medium-v0/plans/defaults/freq1_H15_beam128/0/args.json
+[ utils/setup ] WARNING: did not save git diff
+[ utils/serialization ] Loaded config from pretrained/bullet-halfcheetah-medium-v0/retnet/pretrained/data_config.pkl
+
+Config: <class 'trajectory.datasets.sequence.DiscretizedDataset'>
+    N: 100
+    discount: 0.99
+    discretizer: QuantileDiscretizer
+    env: bullet-halfcheetah-medium-v0
+    penalty: -100
+    sequence_length: 10
+    step: 1
+
+[ datasets/sequence ] Sequence length: 10 | Step: 1 | Max path length: 1000
+[ datasets/sequence ] Loading... load datafile:   0%|          | 0/19 [00:00<?, ?it/s]load datafile:   5%|▌         | 1/19 [00:00<00:10,  1.74it/s]load datafile:  79%|███████▉  | 15/19 [00:04<00:01,  3.64it/s]load datafile:  84%|████████▍ | 16/19 [00:07<00:01,  1.89it/s]load datafile:  89%|████████▉ | 17/19 [00:07<00:01,  1.99it/s]load datafile:  95%|█████████▍| 18/19 [00:07<00:00,  2.16it/s]load datafile: 100%|██████████| 19/19 [00:07<00:00,  2.40it/s]✓
+[ datasets/sequence ] Segmenting... ✓
+[ utils/discretization ] Testing... argv[0]=
+argv[0]=
+slurmstepd: error: *** JOB 2056408 ON node859 CANCELLED AT 2023-11-22T16:39:41 DUE TO TIME LIMIT ***

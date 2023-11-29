@@ -1,0 +1,64 @@
+## Starting GPU test on node858
+## Loading module
+## Number of available CUDA devices: 0
+Conda environment: trajectory
+[/bin/bash] #### Starting Python test
+[/bin/bash] ## This is s3686140 on node858 and this job has the ID 2064785
+[/bin/bash] ## current working directory: /home/s3686140/data1/sadrl-project
+[/bin/bash] ## Run script
+Traceback (most recent call last):
+  File "/home/s3686140/.local/lib/python3.8/site-packages/git/__init__.py", line 166, in <module>
+    refresh()
+  File "/home/s3686140/.local/lib/python3.8/site-packages/git/__init__.py", line 153, in refresh
+    if not Git.refresh(path=path):
+  File "/home/s3686140/.local/lib/python3.8/site-packages/git/cmd.py", line 391, in refresh
+    raise ImportError(err)
+ImportError: Bad git executable.
+The git executable must be specified in one of the following ways:
+    - be included in your $PATH
+    - be set via $GIT_PYTHON_GIT_EXECUTABLE
+    - explicitly set via git.refresh()
+
+All git commands will error until this is rectified.
+
+This initial warning can be silenced or aggravated in the future by setting the
+$GIT_PYTHON_REFRESH environment variable. Use one of the following values:
+    - quiet|q|silence|s|none|n|0: for no warning or exception
+    - warn|w|warning|1: for a printed warning
+    - error|e|raise|r|2: for a raised exception
+
+Example:
+    export GIT_PYTHON_REFRESH=quiet
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "scripts/train_retnet.py", line 8, in <module>
+    import trajectory.utils as utils
+  File "/data1/s3686140/sadrl-project/trajectory/utils/__init__.py", line 1, in <module>
+    from .setup import Parser, watch
+  File "/data1/s3686140/sadrl-project/trajectory/utils/setup.py", line 13, in <module>
+    from .git_utils import (
+  File "/data1/s3686140/sadrl-project/trajectory/utils/git_utils.py", line 2, in <module>
+    import git
+  File "/home/s3686140/.local/lib/python3.8/site-packages/git/__init__.py", line 168, in <module>
+    raise ImportError("Failed to initialize: {0}".format(_exc)) from _exc
+ImportError: Failed to initialize: Bad git executable.
+The git executable must be specified in one of the following ways:
+    - be included in your $PATH
+    - be set via $GIT_PYTHON_GIT_EXECUTABLE
+    - explicitly set via git.refresh()
+
+All git commands will error until this is rectified.
+
+This initial warning can be silenced or aggravated in the future by setting the
+$GIT_PYTHON_REFRESH environment variable. Use one of the following values:
+    - quiet|q|silence|s|none|n|0: for no warning or exception
+    - warn|w|warning|1: for a printed warning
+    - error|e|raise|r|2: for a raised exception
+
+Example:
+    export GIT_PYTHON_REFRESH=quiet
+
+[/bin/bash] ## Script finished

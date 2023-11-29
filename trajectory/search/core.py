@@ -53,10 +53,10 @@ def beam_plan(
     ## logging
     progress = utils.Progress(n_steps) if verbose else utils.Silent()
     incremental_state = {"is_first_step": True}
-    for n in range(x.shape[1]-1):
-        x_n = x[:, :n+1]
-        _, _ = sample(model, x_n, incremental_state=incremental_state, **sample_kwargs)
-        incremental_state['is_first_step'] = False
+    if "retnet" in model.__name__().lower():
+        for n in range(x.shape[1]-1):
+            _, _ = sample(model, x[:, :n+1], incremental_state=incremental_state, **sample_kwargs)
+            incremental_state['is_first_step'] = False
     
     for t in range(n_steps):
         ## repeat everything by `n_expand` before we sample actions

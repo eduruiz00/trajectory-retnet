@@ -115,7 +115,7 @@ class MultiScaleRetention(nn.Module):
         qr, kr, v,
         inner_mask
     ):
-        mask, cross_decay, query_inner_decay, value_inner_decay = inner_mask
+        mask, cross_decay, query_inner_decay, value_inner_decay = inner_mask # mask = , query_inner_decay=xi, value_inner_decay = gamma^B 
         bsz, tgt_len, embed_dim = v.size()
         chunk_len = mask.size(1)
         num_chunks = tgt_len // chunk_len
@@ -156,7 +156,7 @@ class MultiScaleRetention(nn.Module):
         align_inner_scale = all_scale / inner_scale
         align_cross_scale = all_scale / cross_scale
 
-        cross_output = (qr * query_inner_decay) @ kv_recurrent
+        cross_output = (qr * query_inner_decay) @ kv_recurrent # kv_recurrent = R_i
         output = inner_output / align_inner_scale + cross_output / align_cross_scale
         # output = inner_output / cross_scale + cross_output / inner_scale
 

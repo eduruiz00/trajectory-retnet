@@ -1,0 +1,30 @@
+## Starting GPU test on node852
+## Loading module
+## Number of available CUDA devices: 0
+Conda environment: trajectory
+[/bin/bash] #### Starting Python test
+[/bin/bash] ## This is s3686140 on node852 and this job has the ID 2065151
+[/bin/bash] ## current working directory: /home/s3686140/data1/sadrl-project
+[/bin/bash] ## Run script
+pybullet build time: May 20 2022 19:44:17
+[ utils/setup ] Reading config: config.offline:bullet_halfcheetah_medium_v0
+[ utils/setup ] Not using overrides | config: config.offline | dataset: bullet_halfcheetah_medium_v0
+[ utils/setup ] Made savepath: pretrained/bullet-halfcheetah-medium-v0/retnet/pretrained/2023-11-27_19-26-49
+[ utils/setup ] Saved args to pretrained/bullet-halfcheetah-medium-v0/retnet/pretrained/2023-11-27_19-26-49/args.json
+[ utils/setup ] WARNING: did not save git diff
+
+Config: <class 'trajectory.datasets.sequence.DiscretizedDataset'>
+    N: 100
+    discount: 0.99
+    discretizer: QuantileDiscretizer
+    env: bullet-halfcheetah-medium-v0
+    penalty: -100
+    sequence_length: 10
+    step: 1
+
+Saved config to: pretrained/bullet-halfcheetah-medium-v0/retnet/pretrained/2023-11-27_19-26-49/data_config.pkl
+
+[ datasets/sequence ] Sequence length: 10 | Step: 1 | Max path length: 1000
+[ datasets/sequence ] Loading... load datafile:   0%|          | 0/19 [00:00<?, ?it/s]load datafile:   5%|▌         | 1/19 [00:00<00:12,  1.41it/s]load datafile:  11%|█         | 2/19 [00:01<00:08,  2.12it/s]load datafile:  16%|█▌        | 3/19 [00:01<00:09,  1.75it/s]load datafile:  79%|███████▉  | 15/19 [00:06<00:01,  2.49it/s]load datafile:  84%|████████▍ | 16/19 [00:13<00:03,  1.06s/it]load datafile:  89%|████████▉ | 17/19 [00:14<00:02,  1.02s/it]load datafile:  95%|█████████▍| 18/19 [00:14<00:00,  1.08it/s]load datafile: 100%|██████████| 19/19 [00:14<00:00,  1.29it/s]✓
+[ datasets/sequence ] Segmenting... ✓
+[ utils/discretization ] Testing... slurmstepd: error: *** JOB 2065151 ON node852 CANCELLED AT 2023-11-28T19:21:50 DUE TO TIME LIMIT ***
