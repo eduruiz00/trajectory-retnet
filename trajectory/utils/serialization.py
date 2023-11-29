@@ -37,7 +37,7 @@ def get_latest_epoch(loadpath):
     return latest_epoch
 
 
-def load_model(*loadpath, epoch=None, device='cuda:0'):
+def load_model(*loadpath, subdirectory=None, epoch=None, device='cuda:0'):
     """
     Load a model from a directory of saved states.
     """
@@ -45,7 +45,10 @@ def load_model(*loadpath, epoch=None, device='cuda:0'):
     config_path = os.path.join(loadpath_all, 'model_config.pkl')
     if not os.path.isfile(config_path):
         loadpath_all = os.path.join(*loadpath)
-        loadpath_all = os.path.join(loadpath_all, os.listdir(loadpath_all)[-1])
+        if subdirectory is None:
+            loadpath_all = os.path.join(loadpath_all, os.listdir(loadpath_all)[0])
+        else:
+            loadpath_all = os.path.join(loadpath_all, subdirectory)
         config_path = os.path.join(loadpath_all, 'model_config.pkl')
 
     if epoch == 'latest':
@@ -67,14 +70,18 @@ def load_model(*loadpath, epoch=None, device='cuda:0'):
     return model, epoch
 
 
-def load_config(*loadpath):
+def load_config(*loadpath, subdirectory=None):
     """
     Load a config from a pickle file.
     """
     loadpath_all = os.path.join(*loadpath)
     if not os.path.isfile(loadpath_all):
         loadpath_all = os.path.join(*loadpath[:-1])
-        loadpath_all = os.path.join(loadpath_all, os.listdir(loadpath_all)[-1])
+        if subdirectory is None:
+            loadpath_all = os.path.join(loadpath_all, os.listdir(loadpath_all)[0])
+        else:
+            print(subdirectory)
+            loadpath_all = os.path.join(loadpath_all, subdirectory)
         loadpath_all = os.path.join(loadpath_all, loadpath[-1])
     config = pickle.load(open(loadpath_all, 'rb'))
     print(f'[ utils/serialization ] Loaded config from {loadpath_all}')
@@ -82,11 +89,11 @@ def load_config(*loadpath):
     return config
 
 
-def load_from_config(*loadpath):
+def load_from_config(*loadpath, subdirectory=None):
     """
     Load a config and make an instance of the class.
     """
-    config = load_config(*loadpath)
+    config = load_config(*loadpath, subdirectory=subdirectory)
     return config.make()
 
 

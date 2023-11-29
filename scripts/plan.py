@@ -11,6 +11,8 @@ class Parser(utils.Parser):
     dataset: str = 'bullet-halfcheetah-medium-v0'
     model: str = 'retnet'
     config: str = 'config.offline'
+    render: str = 'True'
+    subdirectory: str = None
 
 #######################
 ######## setup ########
@@ -26,17 +28,16 @@ loadpath = args.gpt_loadpath if args.model == "gpt" else args.retnet_loadpath
 args.exp_name = args.gpt_exp_name if args.model == "gpt" else args.retnet_exp_name
 
 dataset = utils.load_from_config(args.logbase, args.dataset, loadpath,
-        'data_config.pkl')
+        'data_config.pkl', subdirectory=args.subdirectory)
 
 model, model_epoch = utils.load_model(args.logbase, args.dataset, loadpath,
-        epoch=args.model_epoch, device=args.device)
+        epoch=args.model_epoch, device=args.device, subdirectory=args.subdirectory)
 
 if args.model == "retnet":
     model.chunkwise_recurrent = False
 time_str = datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
 writer = SummaryWriter(log_dir=f"runs/plan/{args.model}_{args.dataset}_{time_str}")
-
-score, t, total_reward, terminal = evaluate(model, dataset, writer, args, render=True)
+score, t, total_reward, terminal = evaluate(model, dataset, writer, args, render=(args.render == 'True'))
 
 writer.close()
 
