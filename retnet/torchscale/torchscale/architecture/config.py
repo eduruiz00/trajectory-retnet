@@ -276,6 +276,7 @@ class RetNetConfig(object):
             print(self)
 
         if savepath is not None:
+            self._dict["savepath"] = savepath
             savepath = os.path.join(*savepath) if type(savepath) is tuple else savepath
             pickle.dump(self, open(savepath, 'wb'))
             print(f'Saved config to: {savepath}\n')

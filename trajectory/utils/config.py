@@ -19,6 +19,8 @@ class Config(Mapping):
             print(self)
 
         if savepath is not None:
+            if 'GPT' in str(self._class) or 'Trainer' in str(self._class):
+                self._dict["savepath"] = savepath
             savepath = os.path.join(*savepath) if type(savepath) is tuple else savepath
             pickle.dump(self, open(savepath, 'wb'))
             print(f'Saved config to: {savepath}\n')

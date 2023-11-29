@@ -128,12 +128,16 @@ df_times = pd.DataFrame(columns=['epoch', 'time_trainer', 'time_epoch', 'acc_tim
 
 training_timer = Timer()
 
+curves_file = os.path.join(args.savepath, "total_reward_curves.csv")
+df_empty = pd.DataFrame(columns=["epoch", "total_reward"])
+df_empty.to_csv(curves_file, mode='w')
+
 for epoch in range(n_epochs):
     print(f'\nEpoch: {epoch} / {n_epochs} | {args.dataset} | {args.exp_name} | time: {datetime.datetime.now()}')
     loss, time = trainer.train(model, dataset, starting_epoch=epoch)
     losses.append(loss)
 
-    evaluate(model, dataset, trainer.writer, plan_args, training_epoch=epoch, max_episode_steps=args.training_episode_steps, render=False)
+    evaluate(model, dataset, trainer.writer, plan_args, training_epoch=epoch, max_episode_steps=args.training_episode_steps, render=False, curves_file=curves_file)
     ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
     save_epoch = epoch // save_freq * save_freq
     statepath = os.path.join(args.savepath, f'state_{save_epoch}.pt')
