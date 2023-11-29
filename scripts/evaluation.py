@@ -1,6 +1,8 @@
 import json
 import pdb
 from os.path import join
+import os
+import pandas as pd
 from torch.utils.tensorboard import SummaryWriter
 
 import trajectory.utils as utils
@@ -24,7 +26,15 @@ def evaluate(
     env = datasets.load_environment(args.dataset)
     renderer = utils.make_renderer(args) if render else None
     timer = utils.timer.Timer()
-
+    if training_epoch is None:
+        # plan
+        curves_file = os.path.join(args.savepath, "plan_curves.csv")
+        df_empty = pd.DataFrame(columns=["step", "reward", "total_reward", "score"])
+    else:
+        # training
+        curves_file = os.path.join(args.savepath, "total_reward_curves.csv")
+        df_empty = pd.DataFrame(columns=["epoch", "total_reward"])
+    df_empty.to_csv(curves_file, mode='w')
     discretizer = dataset.discretizer
     discount = dataset.discount
     observation_dim = dataset.observation_dim
@@ -88,6 +98,9 @@ def evaluate(
             writer.add_scalar('total_reward', total_reward, t)
             writer.add_scalar('score', score, t)
 
+            step_df = pd.DataFrame([[t,reward, total_reward, score]])
+            step_df.to_csv(curves_file, mode='a', header = False)
+
 
         # visualization
         if render and (t % args.vis_freq == 0 or terminal or t == T):
@@ -104,5 +117,7 @@ def evaluate(
     
     if training_epoch is not None:
         writer.add_scalar('total_reward', total_reward, training_epoch)
+        step_df = pd.DataFrame([[training_epoch, total_reward]])
+        step_df.to_csv(curves_file, mode='a', header = False)
 
     return score, t, total_reward, terminal

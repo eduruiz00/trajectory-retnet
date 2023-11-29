@@ -5,6 +5,7 @@ from torch.utils.data.dataloader import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 import pdb
 import pandas as pd
+import os
 
 from .timer import Timer
 
@@ -27,6 +28,9 @@ class Trainer:
         self.optimizer = None
         time_str = datetime.datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
         self.writer = SummaryWriter(log_dir=f"runs/train/{config._class.__name__}_{config.dataset}_{time_str}")
+        self.curves_file = os.path.join(os.path.dirname(config.savepath), "learning_curves.csv")
+        df_empty = pd.DataFrame(columns=["iteration", "loss"])
+        df_empty.to_csv(self.curves_file, mode='w')
         self.time_table = pd.DataFrame(columns=['epoch', 'time'])
 
     def get_optimizer(self, model):
@@ -95,5 +99,8 @@ class Trainer:
                         f'[ utils/training ] epoch {self.n_epochs} [ {it:4d} / {len(loader):4d} ] ',
                         f'train loss {loss.item():.5f} | lr {lr:.3e} | lr_mult: {lr_mult:.4f} | '
                         f't: {timer():.2f} | time: {datetime.datetime.now()}')
+                    iteration = starting_epoch * len(loader) * config.batch_size + it*config.batch_size
                     self.writer.add_scalar('Loss/train', loss.item(), starting_epoch * len(loader) * config.batch_size + it*config.batch_size)
+                    step_df = pd.DataFrame([[iteration, loss.item()]])
+                    step_df.to_csv(self.curves_file, mode='a', header = False)
             return losses, train_timer()
