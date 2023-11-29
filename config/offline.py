@@ -90,6 +90,14 @@ base = {
         'verbose': True,
     },
 
+    "plot": {
+        'logbase': logbase,
+        'gpt_loadpath': gpt_expname,
+        'retnet_loadpath': retnet_expname,
+        'prefix': 'plans/defaults/',
+    }
+
+
 }
 
 #------------------------ locomotion ------------------------#
