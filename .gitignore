@@ -22,3 +22,5 @@ runs/
 nohup.out
 environment_mireia.yml
 *nohup*
+*.out
+*.slurm
