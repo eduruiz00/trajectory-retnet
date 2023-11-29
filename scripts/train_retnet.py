@@ -11,6 +11,7 @@ from trajectory.models.transformers import GPT
 from torchscale.architecture.config import RetNetConfig
 from torchscale.architecture.retnet import RetNetDecoder
 from trajectory.utils.timer import Timer
+from evaluation import evaluate
 
 class Parser(utils.Parser):
     dataset: str = 'bullet-halfcheetah-medium-v0'
@@ -23,6 +24,7 @@ class Parser(utils.Parser):
 #######################
 
 args = Parser().parse_args('train')
+plan_args = Parser().parse_args('plan')
 #######################
 ####### dataset #######
 #######################
@@ -131,6 +133,7 @@ for epoch in range(n_epochs):
     loss, time = trainer.train(model, dataset, starting_epoch=epoch)
     losses.append(loss)
 
+    evaluate(model, dataset, trainer.writer, plan_args, training_epoch=epoch, max_episode_steps=args.training_episode_steps, render=False)
     ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
     save_epoch = epoch // save_freq * save_freq
     statepath = os.path.join(args.savepath, f'state_{save_epoch}.pt')

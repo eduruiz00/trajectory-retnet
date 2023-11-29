@@ -46,6 +46,7 @@ base = {
         'termination_penalty': -100,
         'gpt_exp_name':  gpt_expname,
         'retnet_exp_name': retnet_expname,
+        'subdirectory': None,
 
         'discretizer': 'QuantileDiscretizer',
         'action_weight': 5,
