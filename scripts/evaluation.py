@@ -22,19 +22,16 @@ def evaluate(
         training_epoch=None,
         max_episode_steps=None,
         render=False,
+        curves_file=None,
     ):
     env = datasets.load_environment(args.dataset)
     renderer = utils.make_renderer(args) if render else None
     timer = utils.timer.Timer()
-    if training_epoch is None:
+    if curves_file is None:
         # plan
         curves_file = os.path.join(args.savepath, "plan_curves.csv")
         df_empty = pd.DataFrame(columns=["step", "reward", "total_reward", "score"])
-    else:
-        # training
-        curves_file = os.path.join(args.savepath, "total_reward_curves.csv")
-        df_empty = pd.DataFrame(columns=["epoch", "total_reward"])
-    df_empty.to_csv(curves_file, mode='w')
+        df_empty.to_csv(curves_file, mode='w')
     discretizer = dataset.discretizer
     discount = dataset.discount
     observation_dim = dataset.observation_dim

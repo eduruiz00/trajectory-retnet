@@ -27,8 +27,9 @@ class Trainer:
         self.n_tokens = 0 # counter used for learning rate decay
         self.optimizer = None
         time_str = datetime.datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
-        self.writer = SummaryWriter(log_dir=f"runs/train/{config._class.__name__}_{config.dataset}_{time_str}")
-        self.curves_file = os.path.join(os.path.dirname(config.savepath), "learning_curves.csv")
+        model = "retnet" if "retnet" in config.savepath[0] else "gpt"
+        self.writer = SummaryWriter(log_dir=f"runs/train/{model}_{config.dataset}_{time_str}")
+        self.curves_file = os.path.join(config.savepath[0], "learning_curves.csv")
         df_empty = pd.DataFrame(columns=["iteration", "loss"])
         df_empty.to_csv(self.curves_file, mode='w')
         self.time_table = pd.DataFrame(columns=['epoch', 'time'])
@@ -92,7 +93,6 @@ class Trainer:
                         param_group['lr'] = lr
                 else:
                     lr = config.learning_rate
-
                 # report progress
                 if it % log_freq == 0:
                     print(
