@@ -41,14 +41,18 @@ def load_model(*loadpath, epoch=None, device='cuda:0'):
     """
     Load a model from a directory of saved states.
     """
-    loadpath = os.path.join(*loadpath)
-    config_path = os.path.join(loadpath, 'model_config.pkl')
+    loadpath_all = os.path.join(*loadpath)
+    config_path = os.path.join(loadpath_all, 'model_config.pkl')
+    if not os.path.isfile(config_path):
+        loadpath_all = os.path.join(*loadpath)
+        loadpath_all = os.path.join(loadpath_all, os.listdir(loadpath_all)[-1])
+        config_path = os.path.join(loadpath_all, 'model_config.pkl')
 
-    if epoch is 'latest':
-        epoch = get_latest_epoch(loadpath)
+    if epoch == 'latest':
+        epoch = get_latest_epoch(loadpath_all)
 
     print(f'[ utils/serialization ] Loading model epoch: {epoch}')
-    state_path = os.path.join(loadpath, f'state_{epoch}.pt')
+    state_path = os.path.join(loadpath_all, f'state_{epoch}.pt')
 
     config = pickle.load(open(config_path, 'rb'))
     state = torch.load(state_path)
@@ -67,9 +71,13 @@ def load_config(*loadpath):
     """
     Load a config from a pickle file.
     """
-    loadpath = os.path.join(*loadpath)
-    config = pickle.load(open(loadpath, 'rb'))
-    print(f'[ utils/serialization ] Loaded config from {loadpath}')
+    loadpath_all = os.path.join(*loadpath)
+    if not os.path.isfile(loadpath_all):
+        loadpath_all = os.path.join(*loadpath[:-1])
+        loadpath_all = os.path.join(loadpath_all, os.listdir(loadpath_all)[-1])
+        loadpath_all = os.path.join(loadpath_all, loadpath[-1])
+    config = pickle.load(open(loadpath_all, 'rb'))
+    print(f'[ utils/serialization ] Loaded config from {loadpath_all}')
     print(config)
     return config
 

@@ -22,7 +22,7 @@ def evaluate(
         render=False,
     ):
     env = datasets.load_environment(args.dataset)
-    renderer = utils.make_renderer(args)
+    renderer = utils.make_renderer(args) if render else None
     timer = utils.timer.Timer()
 
     discretizer = dataset.discretizer
@@ -87,6 +87,7 @@ def evaluate(
             writer.add_scalar('reward', reward, t)
             writer.add_scalar('total_reward', total_reward, t)
             writer.add_scalar('score', score, t)
+
 
         # visualization
         if render and (t % args.vis_freq == 0 or terminal or t == T):
