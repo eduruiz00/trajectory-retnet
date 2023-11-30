@@ -52,7 +52,7 @@ class Parser(Tap):
         print(f'[ utils/setup ] Saved args to {fullpath}')
         super().save(fullpath, skip_unpicklable=True)
 
-    def parse_args(self, experiment=None):
+    def parse_args(self, experiment=None, mkdir=True):
         """
         Parse command-line arguments and set seed
         """
@@ -64,7 +64,8 @@ class Parser(Tap):
         self.set_seed(args)
         self.get_commit(args)
         self.generate_exp_name(args)
-        self.mkdir(args)    
+        if mkdir and args.load_checkpoint != 'True':
+            self.mkdir(args)    
         self.save_diff(args)
         return args
 

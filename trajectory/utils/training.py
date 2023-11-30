@@ -30,8 +30,9 @@ class Trainer:
         model = "retnet" if "retnet" in config.savepath[0] else "gpt"
         self.writer = SummaryWriter(log_dir=f"runs/train/{model}_{config.dataset}_{time_str}")
         self.curves_file = os.path.join(config.savepath[0], "learning_curves.csv")
-        df_empty = pd.DataFrame(columns=["iteration", "loss"])
-        df_empty.to_csv(self.curves_file, mode='w')
+        if not os.path.isfile(self.curves_file):
+            df_empty = pd.DataFrame(columns=["iteration", "loss"])
+            df_empty.to_csv(self.curves_file, mode='w')
         self.time_table = pd.DataFrame(columns=['epoch', 'time'])
 
     def get_optimizer(self, model):
@@ -98,7 +99,7 @@ class Trainer:
                     print(
                         f'[ utils/training ] epoch {self.n_epochs} [ {it:4d} / {len(loader):4d} ] ',
                         f'train loss {loss.item():.5f} | lr {lr:.3e} | lr_mult: {lr_mult:.4f} | '
-                        f't: {timer():.2f} | time: {datetime.datetime.now()}')
+                        f' n_tokens: {self.n_tokens} | t: {timer():.2f} | time: {datetime.datetime.now()}')
                     iteration = starting_epoch * len(loader) * config.batch_size + it*config.batch_size
                     self.writer.add_scalar('Loss/train', loss.item(), starting_epoch * len(loader) * config.batch_size + it*config.batch_size)
                     step_df = pd.DataFrame([[iteration, loss.item()]])

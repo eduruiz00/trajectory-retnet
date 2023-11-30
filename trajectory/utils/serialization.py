@@ -37,14 +37,13 @@ def get_latest_epoch(loadpath):
     return latest_epoch
 
 
-def load_model(*loadpath, subdirectory=None, epoch=None, device='cuda:0'):
+def load_model(*loadpath, subdirectory=None, epoch=None, device='cuda:0', return_savepath=False):
     """
     Load a model from a directory of saved states.
     """
     loadpath_all = os.path.join(*loadpath)
     config_path = os.path.join(loadpath_all, 'model_config.pkl')
     if not os.path.isfile(config_path):
-        loadpath_all = os.path.join(*loadpath)
         if subdirectory is None:
             loadpath_all = os.path.join(loadpath_all, os.listdir(loadpath_all)[0])
         else:
@@ -66,6 +65,9 @@ def load_model(*loadpath, subdirectory=None, epoch=None, device='cuda:0'):
 
     print(f'\n[ utils/serialization ] Loaded config from {config_path}\n')
     print(config)
+
+    if return_savepath:
+        return model, epoch, loadpath_all
 
     return model, epoch
 

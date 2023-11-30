@@ -18,13 +18,16 @@ class Parser(utils.Parser):
     mode: str = 'parallel'
     config: str = 'config.offline'
     exp_name: str = 'retnet/pretrained'
+    load_checkpoint: str = 'False'
+    subdirectory: str = None
+    model_epoch: str = "latest"
 
 #######################
 ######## setup ########
 #######################
 
 args = Parser().parse_args('train')
-plan_args = Parser().parse_args('plan')
+plan_args = Parser().parse_args('plan', mkdir=False)
 #######################
 ####### dataset #######
 #######################
@@ -33,6 +36,12 @@ env = datasets.load_environment(args.dataset)
 
 sequence_length = args.subsampled_sequence_length * args.step
 args.exp_name = args.retnet_exp_name 
+
+model_epoch = None
+if args.load_checkpoint == 'True':
+    model, model_epoch, args.savepath = utils.load_model(args.logbase, args.dataset, args.exp_name,
+            epoch=args.model_epoch, device=args.device, subdirectory=args.subdirectory, return_savepath=True)
+
 
 dataset_config = utils.Config(
     datasets.DiscretizedDataset,
@@ -64,25 +73,25 @@ print(
 
 chunkwise_recurrent = (args.mode == 'chunkwise')
 
-retnet_config = RetNetConfig(
-    RetNetDecoder,
-    savepath=(args.savepath, 'model_config.pkl'),
-    ## discretization
-    vocab_size=args.N, block_size=block_size,
-    ## architecture
-    n_layer=args.n_layer, decoder_retention_heads=args.n_head, decoder_embed_dim=args.n_embd*args.n_head,
-    ## dimensions
-    observation_dim=obs_dim, action_dim=act_dim, transition_dim=transition_dim,
-    ## loss weighting
-    action_weight=args.action_weight, reward_weight=args.reward_weight, value_weight=args.value_weight,
-    ## dropout probabilities
-    embd_pdrop=args.embd_pdrop, resid_pdrop=args.resid_pdrop, attn_pdrop=args.attn_pdrop,
-    ## training mode
-    chunkwise_recurrent=chunkwise_recurrent,
-)
+if args.load_checkpoint == 'False':
+    retnet_config = RetNetConfig(
+        RetNetDecoder,
+        savepath=(args.savepath, 'model_config.pkl'),
+        ## discretization
+        vocab_size=args.N, block_size=block_size,
+        ## architecture
+        n_layer=args.n_layer, decoder_retention_heads=args.n_head, decoder_embed_dim=args.n_embd*args.n_head,
+        ## dimensions
+        observation_dim=obs_dim, action_dim=act_dim, transition_dim=transition_dim,
+        ## loss weighting
+        action_weight=args.action_weight, reward_weight=args.reward_weight, value_weight=args.value_weight,
+        ## dropout probabilities
+        embd_pdrop=args.embd_pdrop, resid_pdrop=args.resid_pdrop, attn_pdrop=args.attn_pdrop,
+        ## training mode
+        chunkwise_recurrent=chunkwise_recurrent,
+    )
+    model = RetNetDecoder(retnet_config)
 
-
-model = RetNetDecoder(retnet_config)
 model.to(args.device)
 print(f'Number of parameters: {sum(p.numel() for p in model.parameters())}')
 for name, param in model.named_parameters():
@@ -121,6 +130,7 @@ trainer = trainer_config()
 
 ## scale number of epochs to keep number of updates constant
 n_epochs = int(1e6 / len(dataset) * args.n_epochs_ref)
+starting_epoch = 0 if model_epoch is None else model_epoch + 1
 save_freq = int(n_epochs // args.n_saves)
 losses = []
 
@@ -129,10 +139,14 @@ df_times = pd.DataFrame(columns=['epoch', 'time_trainer', 'time_epoch', 'acc_tim
 training_timer = Timer()
 
 curves_file = os.path.join(args.savepath, "total_reward_curves.csv")
-df_empty = pd.DataFrame(columns=["epoch", "total_reward"])
-df_empty.to_csv(curves_file, mode='w')
+if not os.path.isfile(curves_file):
+    df_empty = pd.DataFrame(columns=["epoch", "total_reward"])
+    df_empty.to_csv(curves_file, mode='w')
 
-for epoch in range(n_epochs):
+# trainer.config.lr = 2.285e-04
+# trainer.n_tokens = 2974023073
+
+for epoch in range(starting_epoch, n_epochs):
     print(f'\nEpoch: {epoch} / {n_epochs} | {args.dataset} | {args.exp_name} | time: {datetime.datetime.now()}')
     loss, time = trainer.train(model, dataset, starting_epoch=epoch)
     losses.append(loss)
