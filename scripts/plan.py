@@ -8,7 +8,7 @@ import trajectory.utils as utils
 from evaluation import evaluate
 
 class Parser(utils.Parser):
-    dataset: str = 'bullet-halfcheetah-medium-v0'
+    dataset: str = 'halfcheetah-medium-v2'
     model: str = 'retnet'
     config: str = 'config.offline'
     render: str = 'True'
