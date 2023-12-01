@@ -64,7 +64,7 @@ if __name__ == '__main__':
         "Training Curves",
         "Iterations",
         "Loss",
-        os.path.join(plots_path, "learning_curves.png")
+        os.path.join(plots_path, "learning_curves.svg")
     )
 
     validation_gpt = pd.read_csv(os.path.join(gpt_path, "total_reward_curves.csv"))[["epoch", "total_reward"]]
@@ -75,5 +75,5 @@ if __name__ == '__main__':
         "Validation Curves",
         "Epoch",
         "Total reward in a 300 episodes run",
-        os.path.join(plots_path, "validation_curves.png")
+        os.path.join(plots_path, "validation_curves.svg")
     )
