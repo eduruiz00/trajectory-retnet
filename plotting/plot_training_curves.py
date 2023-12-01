@@ -11,7 +11,7 @@ class Parser(utils.Parser):
     folder_retnet: str
     folder_gpt: str
 
-args = Parser().parse_args('plot')
+args = Parser().parse_args('plot', mkdir=False)
 
 SMALL_SIZE = 12
 MEDIUM_SIZE = 15

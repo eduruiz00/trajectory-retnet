@@ -1,0 +1,49 @@
+diff --git a/scripts/evaluation.py b/scripts/evaluation.py
+index e688d28..321b6b4 100644
+--- a/scripts/evaluation.py
++++ b/scripts/evaluation.py
+@@ -86,7 +86,9 @@ def evaluate(
+ 
+             writer.add_scalar('reward', reward, t)
+             writer.add_scalar('total_reward', total_reward, t)
+-            writer.add_scalar('score', score, t)
++            writer.add_scalar('as', score, t)
++
++            import pdb; pdb.set_trace()
+ 
+         # visualization
+         if render and (t % args.vis_freq == 0 or terminal or t == T):
+diff --git a/scripts/plan.py b/scripts/plan.py
+index 95ddd44..a5bcd00 100644
+--- a/scripts/plan.py
++++ b/scripts/plan.py
+@@ -25,6 +25,7 @@ args = Parser().parse_args('plan')
+ loadpath = args.gpt_loadpath if args.model == "gpt" else args.retnet_loadpath
+ args.exp_name = args.gpt_exp_name if args.model == "gpt" else args.retnet_exp_name
+ 
++
+ dataset = utils.load_from_config(args.logbase, args.dataset, loadpath,
+         'data_config.pkl')
+ 
+diff --git a/trajectory/utils/serialization.py b/trajectory/utils/serialization.py
+index f8b4db2..f54d3e3 100644
+--- a/trajectory/utils/serialization.py
++++ b/trajectory/utils/serialization.py
+@@ -67,9 +67,14 @@ def load_config(*loadpath):
+     """
+     Load a config from a pickle file.
+     """
+-    loadpath = os.path.join(*loadpath)
+-    config = pickle.load(open(loadpath, 'rb'))
+-    print(f'[ utils/serialization ] Loaded config from {loadpath}')
++    import pdb; pdb.set_trace()
++    try:
++        loadpath_all = os.path.join(*loadpath)
++        config = pickle.load(open(loadpath_all, 'rb'))
++    except:
++        loadpath_all = os.path.join(*loadpath[:-1])
++        directories = os.walk(loadpath)
++    print(f'[ utils/serialization ] Loaded config from {loadpath_all}')
+     print(config)
+     return config
+ 

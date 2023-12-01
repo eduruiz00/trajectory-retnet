@@ -64,7 +64,7 @@ class Parser(Tap):
         self.set_seed(args)
         self.get_commit(args)
         self.generate_exp_name(args)
-        if mkdir and args.load_checkpoint != 'True':
+        if mkdir and ("load_checkpoint" not in args.__dict__.keys() or args.load_checkpoint != 'True'):
             self.mkdir(args)    
         self.save_diff(args)
         return args

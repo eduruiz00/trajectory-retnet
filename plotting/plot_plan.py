@@ -11,7 +11,7 @@ class Parser(utils.Parser):
     folders_retnet: list = []
     folders_gpt: list = []
 
-args = Parser().parse_args('plot')
+args = Parser().parse_args('plot', mkdir=False)
 
 SMALL_SIZE = 12
 MEDIUM_SIZE = 15
@@ -45,19 +45,22 @@ def plot_gpt_vs_retnet(gpt_curve, retnet_curve, title, xlabel, ylabel, savepath,
     plt.savefig(savepath)
     plt.close()
 
-def explore_folders(path, folders):
+def explore_folders(path, folders, model):
     all_steps = []
     all_rewards = []
     all_total_rewards = []
     all_scores = []
-    if folders is None:
+    for model_plans in os.listdir(path):
+        if model in model_plans:
+            path = os.path.join(path, model_plans)
+    if not folders:
         folders = os.listdir(path)
     for folder in folders:
-        data = pd.read_csv(os.path.join(path), folder)
-        all_rewards.append(data["rewards"])
-        all_total_rewards.append(data["total_rewards"])
-        all_scores.append(data["scores"])
-        all_steps.append(data["steps"])
+        data = pd.read_csv(os.path.join(path, folder, "plan_curves.csv"))
+        all_rewards.append(data["reward"])
+        all_total_rewards.append(data["total_reward"])
+        all_scores.append(data["score"])
+        all_steps.append(data["step"])
     return all_steps, all_rewards, all_total_rewards, all_scores
 
 def extract_mean_and_std(data):
@@ -75,11 +78,11 @@ if __name__ == '__main__':
     # matplotlib.rc('text', usetex=True)
     #################
 
-    gpt_path = os.path.join(args.logbase, args.dataset, args.gpt_loadpath)
-    retnet_path = os.path.join(args.logbase, args.dataset, args.retnet_loadpath)
+    gpt_path = os.path.join(args.logbase, args.dataset, args.prefix)
+    retnet_path = os.path.join(args.logbase, args.dataset, args.prefix)
 
-    gpt_rewards, gpt_total_rewards, gpt_scores, gpt_steps = explore_folders(gpt_path, args.folders_gpt)
-    retnet_rewards, retnet_total_rewards, retnet_scores, retnet_steps = explore_folders(retnet_path, args.folders_retnet)
+    gpt_steps, gpt_rewards, gpt_total_rewards, gpt_scores = explore_folders(gpt_path, args.folders_gpt, model="gpt")
+    retnet_steps, retnet_rewards, retnet_total_rewards, retnet_scores = explore_folders(retnet_path, args.folders_retnet, model="retnet")
 
     plots_path = os.path.join(args.logbase, args.dataset, "plots")
     if not os.path.isdir(plots_path):
@@ -90,7 +93,7 @@ if __name__ == '__main__':
         "Reward Curves",
         "Steps in episode",
         "reward",
-        os.path.join(plots_path, "reward_curves.svg")
+        os.path.join(plots_path, "reward_curves.png")
     )
 
     plot_gpt_vs_retnet(
@@ -99,7 +102,7 @@ if __name__ == '__main__':
         "Total Reward Curves",
         "Steps in episode",
         "accumulated reward",
-        os.path.join(plots_path, "total_reward_curves.svg")
+        os.path.join(plots_path, "total_reward_curves.png")
     )
 
     plot_gpt_vs_retnet(
@@ -108,5 +111,5 @@ if __name__ == '__main__':
         "Normalized Total Reward Curves",
         "Steps in episode",
         "score",
-        os.path.join(plots_path, "score_curves.svg")
+        os.path.join(plots_path, "score_curves.png")
     )
