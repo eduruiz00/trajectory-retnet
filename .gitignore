@@ -13,7 +13,6 @@ slurm/*sandbox*
 slurm-*.out
 *.png
 *.pdf
-*.pkl
 mjkey.txt
 azure/fuse.cfg
 
