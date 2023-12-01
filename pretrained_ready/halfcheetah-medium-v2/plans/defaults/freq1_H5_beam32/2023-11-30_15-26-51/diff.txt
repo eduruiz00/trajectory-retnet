@@ -1,0 +1,216 @@
+diff --git a/scripts/train.py b/scripts/train.py
+index 7f77e1f..744e9d5 100644
+--- a/scripts/train.py
++++ b/scripts/train.py
+@@ -15,6 +15,9 @@ class Parser(utils.Parser):
+     dataset: str = 'bullet-halfcheetah-medium-v0'
+     config: str = 'config.offline'
+     exp_name: str = 'gpt/pretrained'
++    load_checkpoint: str = 'False'
++    subdirectory: str = None
++    model_epoch: str = "latest"
+ 
+ #######################
+ ######## setup ########
+@@ -32,6 +35,13 @@ env = datasets.load_environment(args.dataset)
+ sequence_length = args.subsampled_sequence_length * args.step
+ args.exp_name = args.gpt_exp_name
+ 
++model_epoch = None
++if args.load_checkpoint == 'True':
++    model, model_epoch, args.savepath = utils.load_model(args.logbase, args.dataset, args.exp_name,
++            epoch=args.model_epoch, device=args.device, subdirectory=args.subdirectory, return_savepath=True)
++
++import pdb; pdb.set_trace()
++
+ dataset_config = utils.Config(
+     datasets.DiscretizedDataset,
+     savepath=(args.savepath, 'data_config.pkl'),
+@@ -60,22 +70,24 @@ print(
+     f'(observation: {obs_dim}, action: {act_dim}) | Block size: {block_size}'
+ )
+ 
+-model_config = utils.Config(
+-    GPT,
+-    savepath=(args.savepath, 'model_config.pkl'),
+-    ## discretization
+-    vocab_size=args.N, block_size=block_size,
+-    ## architecture
+-    n_layer=args.n_layer, n_head=args.n_head, n_embd=args.n_embd*args.n_head,
+-    ## dimensions
+-    observation_dim=obs_dim, action_dim=act_dim, transition_dim=transition_dim,
+-    ## loss weighting
+-    action_weight=args.action_weight, reward_weight=args.reward_weight, value_weight=args.value_weight,
+-    ## dropout probabilities
+-    embd_pdrop=args.embd_pdrop, resid_pdrop=args.resid_pdrop, attn_pdrop=args.attn_pdrop,
+-)
+ 
+-model = model_config()
++if args.load_checkpoint == 'False':
++    model_config = utils.Config(
++        GPT,
++        savepath=(args.savepath, 'model_config.pkl'),
++        ## discretization
++        vocab_size=args.N, block_size=block_size,
++        ## architecture
++        n_layer=args.n_layer, n_head=args.n_head, n_embd=args.n_embd*args.n_head,
++        ## dimensions
++        observation_dim=obs_dim, action_dim=act_dim, transition_dim=transition_dim,
++        ## loss weighting
++        action_weight=args.action_weight, reward_weight=args.reward_weight, value_weight=args.value_weight,
++        ## dropout probabilities
++        embd_pdrop=args.embd_pdrop, resid_pdrop=args.resid_pdrop, attn_pdrop=args.attn_pdrop,
++    )
++    model = model_config()
++
+ model.to(args.device)
+ print(f'Number of parameters: {sum(p.numel() for p in model.parameters())}')
+ 
+@@ -112,6 +124,7 @@ trainer = trainer_config()
+ #######################
+ ## scale number of epochs to keep number of updates constant
+ n_epochs = int(1e6 / len(dataset) * args.n_epochs_ref)
++starting_epoch = 0 if model_epoch is None else model_epoch
+ save_freq = int(n_epochs // args.n_saves)
+ 
+ df_times = pd.DataFrame(columns=['epoch', 'time_trainer', 'time_epoch', 'acc_time'])
+@@ -119,10 +132,11 @@ df_times = pd.DataFrame(columns=['epoch', 'time_trainer', 'time_epoch', 'acc_tim
+ training_timer = Timer()
+ 
+ curves_file = os.path.join(args.savepath, "total_reward_curves.csv")
+-df_empty = pd.DataFrame(columns=["epoch", "total_reward"])
+-df_empty.to_csv(curves_file, mode='w')
++if not os.path.isfile(curves_file):
++    df_empty = pd.DataFrame(columns=["epoch", "total_reward"])
++    df_empty.to_csv(curves_file, mode='w')
+ 
+-for epoch in range(n_epochs):
++for epoch in range(starting_epoch, n_epochs):
+     print(f'\nEpoch: {epoch} / {n_epochs} | {args.dataset} | {args.exp_name} | time: {datetime.datetime.now()}')
+ 
+     losses, time = trainer.train(model, dataset, starting_epoch=epoch)
+diff --git a/scripts/train_retnet.py b/scripts/train_retnet.py
+index 1213a60..db5c833 100644
+--- a/scripts/train_retnet.py
++++ b/scripts/train_retnet.py
+@@ -18,6 +18,9 @@ class Parser(utils.Parser):
+     mode: str = 'parallel'
+     config: str = 'config.offline'
+     exp_name: str = 'retnet/pretrained'
++    load_checkpoint: str = 'False'
++    subdirectory: str = None
++    model_epoch: str = "latest"
+ 
+ #######################
+ ######## setup ########
+@@ -64,25 +67,30 @@ print(
+ 
+ chunkwise_recurrent = (args.mode == 'chunkwise')
+ 
+-retnet_config = RetNetConfig(
+-    RetNetDecoder,
+-    savepath=(args.savepath, 'model_config.pkl'),
+-    ## discretization
+-    vocab_size=args.N, block_size=block_size,
+-    ## architecture
+-    n_layer=args.n_layer, decoder_retention_heads=args.n_head, decoder_embed_dim=args.n_embd*args.n_head,
+-    ## dimensions
+-    observation_dim=obs_dim, action_dim=act_dim, transition_dim=transition_dim,
+-    ## loss weighting
+-    action_weight=args.action_weight, reward_weight=args.reward_weight, value_weight=args.value_weight,
+-    ## dropout probabilities
+-    embd_pdrop=args.embd_pdrop, resid_pdrop=args.resid_pdrop, attn_pdrop=args.attn_pdrop,
+-    ## training mode
+-    chunkwise_recurrent=chunkwise_recurrent,
+-)
+-
++model_epoch = None
++if args.load_checkpoint == 'True':
++    import pdb; pdb.set_trace()
++    model, model_epoch, args.savepath = utils.load_model(args.logbase, args.dataset, args.exp_name,
++            epoch=args.model_epoch, device=args.device, subdirectory=args.subdirectory, return_savepath=True)
++else:
++    retnet_config = RetNetConfig(
++        RetNetDecoder,
++        savepath=(args.savepath, 'model_config.pkl'),
++        ## discretization
++        vocab_size=args.N, block_size=block_size,
++        ## architecture
++        n_layer=args.n_layer, decoder_retention_heads=args.n_head, decoder_embed_dim=args.n_embd*args.n_head,
++        ## dimensions
++        observation_dim=obs_dim, action_dim=act_dim, transition_dim=transition_dim,
++        ## loss weighting
++        action_weight=args.action_weight, reward_weight=args.reward_weight, value_weight=args.value_weight,
++        ## dropout probabilities
++        embd_pdrop=args.embd_pdrop, resid_pdrop=args.resid_pdrop, attn_pdrop=args.attn_pdrop,
++        ## training mode
++        chunkwise_recurrent=chunkwise_recurrent,
++    )
++    model = RetNetDecoder(retnet_config)
+ 
+-model = RetNetDecoder(retnet_config)
+ model.to(args.device)
+ print(f'Number of parameters: {sum(p.numel() for p in model.parameters())}')
+ for name, param in model.named_parameters():
+@@ -121,6 +129,7 @@ trainer = trainer_config()
+ 
+ ## scale number of epochs to keep number of updates constant
+ n_epochs = int(1e6 / len(dataset) * args.n_epochs_ref)
++starting_epoch = 0 if model_epoch is None else model_epoch
+ save_freq = int(n_epochs // args.n_saves)
+ losses = []
+ 
+@@ -129,10 +138,11 @@ df_times = pd.DataFrame(columns=['epoch', 'time_trainer', 'time_epoch', 'acc_tim
+ training_timer = Timer()
+ 
+ curves_file = os.path.join(args.savepath, "total_reward_curves.csv")
+-df_empty = pd.DataFrame(columns=["epoch", "total_reward"])
+-df_empty.to_csv(curves_file, mode='w')
++if not os.path.isfile(curves_file):
++    df_empty = pd.DataFrame(columns=["epoch", "total_reward"])
++    df_empty.to_csv(curves_file, mode='w')
+ 
+-for epoch in range(n_epochs):
++for epoch in range(starting_epoch, n_epochs):
+     print(f'\nEpoch: {epoch} / {n_epochs} | {args.dataset} | {args.exp_name} | time: {datetime.datetime.now()}')
+     loss, time = trainer.train(model, dataset, starting_epoch=epoch)
+     losses.append(loss)
+diff --git a/trajectory/utils/serialization.py b/trajectory/utils/serialization.py
+index b9244b0..2141c3a 100644
+--- a/trajectory/utils/serialization.py
++++ b/trajectory/utils/serialization.py
+@@ -37,7 +37,7 @@ def get_latest_epoch(loadpath):
+     return latest_epoch
+ 
+ 
+-def load_model(*loadpath, subdirectory=None, epoch=None, device='cuda:0'):
++def load_model(*loadpath, subdirectory=None, epoch=None, device='cuda:0', return_savepath=False):
+     """
+     Load a model from a directory of saved states.
+     """
+@@ -67,6 +67,9 @@ def load_model(*loadpath, subdirectory=None, epoch=None, device='cuda:0'):
+     print(f'\n[ utils/serialization ] Loaded config from {config_path}\n')
+     print(config)
+ 
++    if return_savepath:
++        return model, epoch, loadpath_all
++
+     return model, epoch
+ 
+ 
+diff --git a/trajectory/utils/training.py b/trajectory/utils/training.py
+index 34aa9c2..8e1f98a 100644
+--- a/trajectory/utils/training.py
++++ b/trajectory/utils/training.py
+@@ -30,8 +30,9 @@ class Trainer:
+         model = "retnet" if "retnet" in config.savepath[0] else "gpt"
+         self.writer = SummaryWriter(log_dir=f"runs/train/{model}_{config.dataset}_{time_str}")
+         self.curves_file = os.path.join(config.savepath[0], "learning_curves.csv")
+-        df_empty = pd.DataFrame(columns=["iteration", "loss"])
+-        df_empty.to_csv(self.curves_file, mode='w')
++        if not os.path.isfile(self.curves_file):
++            df_empty = pd.DataFrame(columns=["iteration", "loss"])
++            df_empty.to_csv(self.curves_file, mode='w')
+         self.time_table = pd.DataFrame(columns=['epoch', 'time'])
+ 
+     def get_optimizer(self, model):
