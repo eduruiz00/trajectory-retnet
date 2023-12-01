@@ -1,0 +1,304 @@
+diff --git a/README.md b/README.md
+index 87ef2f7..6c355dc 100644
+--- a/README.md
++++ b/README.md
+@@ -106,7 +106,7 @@ docker run -it --rm --gpus all \
+ 	trajectory \
+ 	bash -c \
+ 	"export PYTHONPATH=$PYTHONPATH:/home/code && \
+-	python /home/code/scripts/train.py --dataset hopper-medium-expert-v2 --exp_name docker/"
++	python /home/code/scripts/train.py --dataset hopper-medium-expert-v2 --gpt_exp_name docker/"
+ ```
+ 
+ ## Running on Azure
+diff --git a/azure/launch_train.py b/azure/launch_train.py
+index 0812367..9281e4c 100644
+--- a/azure/launch_train.py
++++ b/azure/launch_train.py
+@@ -39,7 +39,7 @@ if __name__ == "__main__":
+ 
+     default_params = {
+         'logbase': os.path.join('/doodad_tmp', azure_logpath, 'logs'),
+-        'exp_name': 'gpt/azure',
++        'gpt_exp_name': 'gpt/azure',
+     }
+ 
+     sweep_function(
+diff --git a/config/offline.py b/config/offline.py
+index 6402b45..4d5beab 100644
+--- a/config/offline.py
++++ b/config/offline.py
+@@ -6,6 +6,7 @@ from trajectory.utils import watch
+ # gpt_expname = 'gpt/azure'
+ logbase = 'pretrained/'
+ gpt_expname = 'gpt/pretrained'
++retnet_expname = 'retnet/pretrained'
+ 
+ ## automatically make experiment names for planning
+ ## by labelling folders with these args
+@@ -26,13 +27,13 @@ base = {
+ 
+         ## number of epochs for a 1M-size dataset; n_epochs = 1M / dataset_size * n_epochs_ref
+         'n_epochs_ref': 50,
+-        'n_saves': 3,
++        'n_saves': 50,
+         'logbase': logbase,
+         'device': 'cuda',
+ 
+         'n_embd': 32,
+         # 'batch_size': 256,
+-        'batch_size': 16,
++        'batch_size': 8,
+         'learning_rate': 6e-4,
+         'lr_decay': True,
+         'seed': 42,
+@@ -44,7 +45,8 @@ base = {
+         'step': 1,
+         'subsampled_sequence_length': 10,
+         'termination_penalty': -100,
+-        'exp_name': gpt_expname,
++        'gpt_exp_name':  gpt_expname,
++        'retnet_exp_name': retnet_expname,
+ 
+         'discretizer': 'QuantileDiscretizer',
+         'action_weight': 5,
+@@ -55,7 +57,8 @@ base = {
+     'plan': {
+         'logbase': logbase,
+         'gpt_loadpath': gpt_expname,
+-        'gpt_epoch': 'latest',
++        'retnet_loadpath': retnet_expname,
++        'epoch': 'latest',
+         'device': 'cuda',
+         'renderer': 'Renderer',
+ 
+diff --git a/retnet/torchscale/torchscale/architecture/config.py b/retnet/torchscale/torchscale/architecture/config.py
+index 88cf487..1080079 100644
+--- a/retnet/torchscale/torchscale/architecture/config.py
++++ b/retnet/torchscale/torchscale/architecture/config.py
+@@ -246,7 +246,7 @@ class RetNetConfig(object):
+         self.layernorm_eps = kwargs.pop("layernorm_eps", 1e-6)
+         # Blockwise
+         self.chunkwise_recurrent = kwargs.pop("chunkwise_recurrent", False)
+-        self.recurrent_chunk_size = kwargs.pop("recurrent_chunk_size", 512)
++        self.recurrent_chunk_size = kwargs.pop("recurrent_chunk_size", 40)
+         # Text
+         self.vocab_size = kwargs.pop("vocab_size", -1)
+         # Fairscale
+diff --git a/retnet/torchscale/torchscale/architecture/retnet.py b/retnet/torchscale/torchscale/architecture/retnet.py
+index 8b7c871..6b955d6 100644
+--- a/retnet/torchscale/torchscale/architecture/retnet.py
++++ b/retnet/torchscale/torchscale/architecture/retnet.py
+@@ -376,7 +376,7 @@ class RetNetDecoder(nn.Module):
+         input,
+         targets=None,
+         mask=None,
+-        incremental_state=None,
++        incremental_state=None, # recurrent state (S_n in the paper)
+         features_only=False,
+         return_all_hiddens=False,
+         token_embeddings=None,
+@@ -390,7 +390,6 @@ class RetNetDecoder(nn.Module):
+         )
+         is_first_step = self.is_first_step(incremental_state)
+ 
+-        
+         if self.chunkwise_recurrent and input.size(1) % self.recurrent_chunk_size != 0:
+             padding_len = self.recurrent_chunk_size - input.size(1) % self.recurrent_chunk_size
+             slen = input.size(1) + padding_len
+diff --git a/scripts/plan.py b/scripts/plan.py
+index 1a54bbf..b637583 100644
+--- a/scripts/plan.py
++++ b/scripts/plan.py
+@@ -14,6 +14,7 @@ from trajectory.search import (
+ 
+ class Parser(utils.Parser):
+     dataset: str = 'halfcheetah-medium-expert-v2'
++    model: str = 'retnet'
+     config: str = 'config.offline'
+ 
+ #######################
+@@ -26,11 +27,14 @@ args = Parser().parse_args('plan')
+ ####### models ########
+ #######################
+ 
+-dataset = utils.load_from_config(args.logbase, args.dataset, args.gpt_loadpath,
++load_path = args.gpt_loadpath if args.model == "gpt" else args.retnet_loadpath
++args.exp_name = args.gpt_exp_name if args.model == "gpt" else args.retnet_exp_name
++
++dataset = utils.load_from_config(args.logbase, args.dataset, args.loadpath,
+         'data_config.pkl')
+ 
+-gpt, gpt_epoch = utils.load_model(args.logbase, args.dataset, args.gpt_loadpath,
+-        epoch=args.gpt_epoch, device=args.device)
++model, model_epoch = utils.load_model(args.logbase, args.dataset, args.loadpath,
++        epoch=args.model_epoch, device=args.device)
+ 
+ #######################
+ ####### dataset #######
+@@ -74,7 +78,7 @@ for t in range(T):
+ 
+         ## sample sequence from model beginning with `prefix`
+         sequence = beam_plan(
+-            gpt, value_fn, prefix,
++            model, value_fn, prefix,
+             args.horizon, args.beam_width, args.n_expand, observation_dim, action_dim,
+             discount, args.max_context_transitions, verbose=args.verbose,
+             k_obs=args.k_obs, k_act=args.k_act, cdf_obs=args.cdf_obs, cdf_act=args.cdf_act,
+@@ -126,5 +130,5 @@ writer.close()
+ 
+ ## save result as a json file
+ json_path = join(args.savepath, 'rollout.json')
+-json_data = {'score': score, 'step': t, 'return': total_reward, 'term': terminal, 'gpt_epoch': gpt_epoch}
++json_data = {'score': score, 'step': t, 'return': total_reward, 'term': terminal, 'model_epoch': model_epoch}
+ json.dump(json_data, open(json_path, 'w'), indent=2, sort_keys=True)
+diff --git a/scripts/train.py b/scripts/train.py
+index 49ed262..ab3e145 100644
+--- a/scripts/train.py
++++ b/scripts/train.py
+@@ -1,6 +1,7 @@
+ import os
+ import numpy as np
+ import torch
++import datetime
+ import pdb
+ 
+ import trajectory.utils as utils
+@@ -11,6 +12,7 @@ from trajectory.models.transformers import GPT
+ class Parser(utils.Parser):
+     dataset: str = 'halfcheetah-medium-expert-v2'
+     config: str = 'config.offline'
++    exp_name: str = 'gpt/pretrained'
+ 
+ #######################
+ ######## setup ########
+@@ -25,6 +27,7 @@ args = Parser().parse_args('train')
+ env = datasets.load_environment(args.dataset)
+ 
+ sequence_length = args.subsampled_sequence_length * args.step
++args.exp_name = args.gpt_exp_name 
+ 
+ dataset_config = utils.Config(
+     datasets.DiscretizedDataset,
+@@ -107,12 +110,12 @@ n_epochs = int(1e6 / len(dataset) * args.n_epochs_ref)
+ save_freq = int(n_epochs // args.n_saves)
+ 
+ for epoch in range(n_epochs):
+-    print(f'\nEpoch: {epoch} / {n_epochs} | {args.dataset} | {args.exp_name}')
++    print(f'\nEpoch: {epoch} / {n_epochs} | {args.dataset} | {args.exp_name} | time: {datetime.datetime.now()}')
+ 
+     trainer.train(model, dataset)
+ 
+     ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
+-    save_epoch = (epoch + 1) // save_freq * save_freq
++    save_epoch = epoch // save_freq * save_freq
+     statepath = os.path.join(args.savepath, f'state_{save_epoch}.pt')
+     print(f'Saving model to {statepath}')
+ 
+diff --git a/scripts/train_retnet.py b/scripts/train_retnet.py
+index 0bebed7..33044b6 100644
+--- a/scripts/train_retnet.py
++++ b/scripts/train_retnet.py
+@@ -1,6 +1,7 @@
+ import os
+ import numpy as np
+ import torch
++import datetime
+ import pdb
+ 
+ import trajectory.utils as utils
+@@ -11,14 +12,15 @@ from torchscale.architecture.retnet import RetNetDecoder
+ 
+ class Parser(utils.Parser):
+     dataset: str = 'halfcheetah-medium-expert-v2'
++    mode: str = 'parallel'
+     config: str = 'config.offline'
++    exp_name: str = 'retnet/pretrained'
+ 
+ #######################
+ ######## setup ########
+ #######################
+ 
+ args = Parser().parse_args('train')
+-
+ #######################
+ ####### dataset #######
+ #######################
+@@ -26,6 +28,7 @@ args = Parser().parse_args('train')
+ env = datasets.load_environment(args.dataset)
+ 
+ sequence_length = args.subsampled_sequence_length * args.step
++args.exp_name = args.retnet_exp_name 
+ 
+ dataset_config = utils.Config(
+     datasets.DiscretizedDataset,
+@@ -55,6 +58,8 @@ print(
+     f'(observation: {obs_dim}, action: {act_dim}) | Block size: {block_size}'
+ )
+ 
++chunkwise_recurrent = (args.mode == 'chunkwise')
++
+ model_config = RetNetConfig(
+     savepath=(args.savepath, 'model_config.pkl'),
+     ## discretization
+@@ -67,6 +72,8 @@ model_config = RetNetConfig(
+     action_weight=args.action_weight, reward_weight=args.reward_weight, value_weight=args.value_weight,
+     ## dropout probabilities
+     embd_pdrop=args.embd_pdrop, resid_pdrop=args.resid_pdrop, attn_pdrop=args.attn_pdrop,
++    ## training mode
++    chunkwise_recurrent=chunkwise_recurrent,
+ )
+ 
+ 
+@@ -109,11 +116,11 @@ save_freq = int(n_epochs // args.n_saves)
+ losses = []
+ 
+ for epoch in range(n_epochs):
+-    print(f'\nEpoch: {epoch} / {n_epochs} | {args.dataset} | {args.exp_name}')
++    print(f'\nEpoch: {epoch} / {n_epochs} | {args.dataset} | {args.exp_name} | time: {datetime.datetime.now()}')
+     losses.append(trainer.train(model, dataset))
+ 
+     ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
+-    save_epoch = (epoch + 1) // save_freq * save_freq
++    save_epoch = epoch // save_freq * save_freq
+     statepath = os.path.join(args.savepath, f'state_{save_epoch}.pt')
+     print(f'Saving model to {statepath}')
+ 
+diff --git a/trajectory/utils/training.py b/trajectory/utils/training.py
+index 06cdee2..146fc5a 100644
+--- a/trajectory/utils/training.py
++++ b/trajectory/utils/training.py
+@@ -1,5 +1,6 @@
+ import math
+ import torch
++import datetime
+ from torch.utils.data.dataloader import DataLoader
+ from torch.utils.tensorboard import SummaryWriter
+ import pdb
+@@ -27,7 +28,7 @@ class Trainer:
+             self.optimizer = model.configure_optimizers(self.config)
+         return self.optimizer
+ 
+-    def train(self, model, dataset, n_epochs=1, log_freq=100):
++    def train(self, model, dataset, n_epochs=1, log_freq=100, starting_epoch=0):
+ 
+         config = self.config
+         optimizer = self.get_optimizer(model)
+@@ -38,7 +39,7 @@ class Trainer:
+                             batch_size=config.batch_size,
+                             num_workers=config.num_workers)
+ 
+-        for _ in range(n_epochs):
++        for epoch in range(n_epochs):
+ 
+             losses = []
+             timer = Timer()
+@@ -79,6 +80,6 @@ class Trainer:
+                     print(
+                         f'[ utils/training ] epoch {self.n_epochs} [ {it:4d} / {len(loader):4d} ] ',
+                         f'train loss {loss.item():.5f} | lr {lr:.3e} | lr_mult: {lr_mult:.4f} | '
+-                        f't: {timer():.2f}')
+-                    self.writer.add_scalar('Loss/train', loss.item(), it*config.batch_size)
++                        f't: {timer():.2f} | time: {datetime.datetime.now()}')
++                    self.writer.add_scalar('Loss/train', loss.item(), starting_epoch * len(loader) * config.batch_size + it*config.batch_size)
+             return losses
