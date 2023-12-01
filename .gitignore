@@ -17,7 +17,6 @@ slurm-*.out
 mjkey.txt
 azure/fuse.cfg
 
-pretrained/
 runs/
 nohup.out
 environment_mireia.yml
