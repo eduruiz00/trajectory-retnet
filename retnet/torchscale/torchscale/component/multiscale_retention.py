@@ -73,13 +73,19 @@ class MultiScaleRetention(nn.Module):
         nn.init.xavier_uniform_(self.g_proj.weight, gain=2 ** -2.5)
         nn.init.xavier_uniform_(self.out_proj.weight)
 
-    def parallel_forward(self, qr, kr, v, mask):
+    def parallel_forward(self, qr, kr, v, mask, incremental_state):
         bsz, tgt_len, embed_dim = v.size()
 
         vr = v.view(bsz, tgt_len, self.num_heads, self.head_dim).transpose(1, 2)
 
         qk_mat = qr @ kr.transpose(-1, -2) # bsz * m * tgt_len * tgt_len
         qk_mat = qk_mat * mask
+
+        if incremental_state is not None:
+            final_mask = mask[:, -1, :] / mask[:, -1, -1:]
+            incremental_state["prev_key_value"] = (vr * (final_mask / final_mask.sum(dim=-1, keepdim=True)).unsqueeze(-1)).transpose(-1, -2) @ kr
+            incremental_state["scale"] = final_mask.sum(dim=-1)[:, None, None]
+
         # invariant after normalization
         qk_mat = qk_mat / qk_mat.detach().sum(dim=-1, keepdim=True).abs().clamp(min=1)
         output = torch.matmul(qk_mat, vr)
@@ -113,7 +119,8 @@ class MultiScaleRetention(nn.Module):
     def chunk_recurrent_forward(
         self,
         qr, kr, v,
-        inner_mask
+        inner_mask,
+        incremental_state,
     ):
         mask, cross_decay, query_inner_decay, value_inner_decay = inner_mask # mask = , query_inner_decay=xi, value_inner_decay = gamma^B 
         bsz, tgt_len, embed_dim = v.size()
@@ -168,6 +175,7 @@ class MultiScaleRetention(nn.Module):
         x,
         rel_pos,
         chunkwise_recurrent=False,
+        recurrent=False,
         incremental_state=None
     ):
         bsz, tgt_len, _ = x.size()
@@ -184,12 +192,12 @@ class MultiScaleRetention(nn.Module):
 
         qr = theta_shift(q, sin, cos)
         kr = theta_shift(k, sin, cos)
-        if incremental_state is not None:
+        if recurrent:
             output = self.recurrent_forward(qr, kr, v, inner_mask, incremental_state)
         elif chunkwise_recurrent:
-            output = self.chunk_recurrent_forward(qr, kr, v, inner_mask)
+            output = self.chunk_recurrent_forward(qr, kr, v, inner_mask, incremental_state)
         else:
-            output = self.parallel_forward(qr, kr, v, inner_mask)
+            output = self.parallel_forward(qr, kr, v, inner_mask, incremental_state)
         
         output = self.group_norm(output).reshape(bsz, tgt_len, self.head_dim * self.num_heads)
 

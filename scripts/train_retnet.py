@@ -89,6 +89,7 @@ if args.load_checkpoint == 'False':
         embd_pdrop=args.embd_pdrop, resid_pdrop=args.resid_pdrop, attn_pdrop=args.attn_pdrop,
         ## training mode
         chunkwise_recurrent=chunkwise_recurrent,
+        recurrent=False,
     )
     model = RetNetDecoder(retnet_config)
 

@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 class Parser(utils.Parser):
     config: str = 'config.offline'
     dataset: str = 'halfcheetah-medium-v2'
+    params: str = 'freq1_H15_beam32'
     folders_retnet: list = []
     folders_gpt: list = []
 
@@ -45,14 +46,15 @@ def plot_gpt_vs_retnet(gpt_curve, retnet_curve, title, xlabel, ylabel, savepath,
     plt.savefig(savepath)
     plt.close()
 
-def explore_folders(path, folders, model):
+def explore_folders(path, params, folders, model):
     all_steps = []
     all_rewards = []
     all_total_rewards = []
     all_scores = []
     for model_plans in os.listdir(path):
-        if model in model_plans:
+        if model in model_plans and params in model_plans:
             path = os.path.join(path, model_plans)
+            break
     if not folders:
         folders = os.listdir(path)
     for folder in folders:
@@ -81,8 +83,8 @@ if __name__ == '__main__':
     gpt_path = os.path.join(args.logbase, args.dataset, args.prefix)
     retnet_path = os.path.join(args.logbase, args.dataset, args.prefix)
 
-    gpt_steps, gpt_rewards, gpt_total_rewards, gpt_scores = explore_folders(gpt_path, args.folders_gpt, model="gpt")
-    retnet_steps, retnet_rewards, retnet_total_rewards, retnet_scores = explore_folders(retnet_path, args.folders_retnet, model="retnet")
+    gpt_steps, gpt_rewards, gpt_total_rewards, gpt_scores = explore_folders(gpt_path, args.params, args.folders_gpt, model="gpt")
+    retnet_steps, retnet_rewards, retnet_total_rewards, retnet_scores = explore_folders(retnet_path, args.params, args.folders_retnet, model="retnet")
 
     plots_path = os.path.join(args.logbase, args.dataset, "plots")
     if not os.path.isdir(plots_path):
@@ -91,25 +93,25 @@ if __name__ == '__main__':
         (np.array(gpt_steps[0]), extract_mean_and_std(gpt_rewards)),
         (np.array(retnet_steps[0]), extract_mean_and_std(retnet_rewards)),
         "Reward Curves",
-        "Steps in episode",
-        "reward",
-        os.path.join(plots_path, "reward_curves.png")
+        "Steps in Episode",
+        "Reward",
+        os.path.join(plots_path, args.params + "_reward_curves.png")
     )
 
     plot_gpt_vs_retnet(
         (np.array(gpt_steps[0]), extract_mean_and_std(gpt_total_rewards)),
         (np.array(retnet_steps[0]), extract_mean_and_std(retnet_total_rewards)),
         "Total Reward Curves",
-        "Steps in episode",
-        "accumulated reward",
-        os.path.join(plots_path, "total_reward_curves.png")
+        "Steps in Episode",
+        "Accumulated Reward",
+        os.path.join(plots_path, args.params + "_total_reward_curves.png")
     )
 
     plot_gpt_vs_retnet(
         (np.array(gpt_steps[0]), extract_mean_and_std(gpt_scores)),
         (np.array(retnet_steps[0]), extract_mean_and_std(retnet_scores)),
         "Normalized Total Reward Curves",
-        "Steps in episode",
-        "score",
-        os.path.join(plots_path, "score_curves.png")
+        "Steps in Episode",
+        "Score",
+        os.path.join(plots_path, args.params + "_score_curves.png")
     )

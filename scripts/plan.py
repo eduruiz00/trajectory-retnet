@@ -19,7 +19,6 @@ class Parser(utils.Parser):
 #######################
 
 args = Parser().parse_args('plan')
-
 #######################
 ####### models ########
 #######################

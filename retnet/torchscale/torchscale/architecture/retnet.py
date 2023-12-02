@@ -158,6 +158,7 @@ class DecoderLayer(nn.Module):
         x,
         incremental_state=None,
         chunkwise_recurrent=False,
+        recurrent=False,
         retention_rel_pos=None,
     ):
         residual = x
@@ -169,6 +170,7 @@ class DecoderLayer(nn.Module):
             incremental_state=incremental_state,
             rel_pos=retention_rel_pos,
             chunkwise_recurrent=chunkwise_recurrent,
+            recurrent=recurrent,
         )
         x = self.dropout_module(x)
 
@@ -261,6 +263,7 @@ class RetNetDecoder(nn.Module):
         self.retnet_rel_pos = RetNetRelPos(config)
         self.chunkwise_recurrent = config.chunkwise_recurrent
         self.recurrent_chunk_size = config.recurrent_chunk_size
+        self.recurrent = config.recurrent if "recurrent" in config.__dict__.keys() else False
         
 
         if config.deepnorm:
@@ -319,7 +322,7 @@ class RetNetDecoder(nn.Module):
         token_embedding=None,
         incremental_state=None,
     ):
-        if incremental_state is not None and not self.is_first_step(incremental_state):
+        if self.recurrent and not self.is_first_step(incremental_state):
             tokens = tokens[:, -1:]
 
         if token_embedding is None:
@@ -403,7 +406,7 @@ class RetNetDecoder(nn.Module):
         else:
             slen = input.size(1)
         # relative position
-        retention_rel_pos = self.retnet_rel_pos(slen, incremental_state is not None and not is_first_step, chunkwise_recurrent=self.chunkwise_recurrent)
+        retention_rel_pos = self.retnet_rel_pos(slen, self.recurrent and not is_first_step, chunkwise_recurrent=self.chunkwise_recurrent)
         # decoder layers
         inner_states = [x]
 
@@ -422,6 +425,7 @@ class RetNetDecoder(nn.Module):
                 incremental_state[idx] if incremental_state is not None else None,
                 retention_rel_pos=retention_rel_pos,
                 chunkwise_recurrent=self.chunkwise_recurrent,
+                recurrent=self.recurrent
             )
             l_aux.append(l_aux_i)
             inner_states.append(x)
@@ -439,7 +443,7 @@ class RetNetDecoder(nn.Module):
 
         logits = self.output_layer(x_pad)
         logits = logits.reshape(b, t + n_pad, self.vocab_size + 1)
-        if incremental_state is not None:
+        if self.recurrent:
             logits = logits[:,t-1:t]
         else:
             logits = logits[:,:t]

@@ -248,6 +248,8 @@ class RetNetConfig(object):
         # Blockwise
         self.chunkwise_recurrent = kwargs.pop("chunkwise_recurrent", False)
         self.recurrent_chunk_size = kwargs.pop("recurrent_chunk_size", 40)
+        # Recurrent
+        self.recurrent = kwargs.pop("recurrent", False)
         # Text
         self.vocab_size = kwargs.pop("vocab_size", -1)
         # Fairscale
