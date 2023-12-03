@@ -5,6 +5,7 @@ import os
 import pandas as pd
 from torch.utils.tensorboard import SummaryWriter
 
+from trajectory.utils.timer import Timer
 import trajectory.utils as utils
 import trajectory.datasets as datasets
 from trajectory.search import (
@@ -49,6 +50,8 @@ def evaluate(
     context = []
 
     T = max_episode_steps if max_episode_steps is not None else env.max_episode_steps
+    timer = Timer()
+    time_steps = []
     for t in range(T):
 
         observation = preprocess_fn(observation)
@@ -108,6 +111,8 @@ def evaluate(
             # save rollout thus far
             renderer.render_rollout(join(args.savepath, f'rollout.mp4'), writer, rollout, to_tensorboard_only=True, fps=80, tag='rollout', step=t)
 
+        cum_time, time_step = timer(flag=True)
+        time_steps.append(time_step)
         if terminal: break
 
         observation = next_observation
@@ -117,4 +122,4 @@ def evaluate(
         step_df = pd.DataFrame([[training_epoch, total_reward]])
         step_df.to_csv(curves_file, mode='a', header = False)
 
-    return score, t, total_reward, terminal
+    return score, t, total_reward, terminal, time_steps

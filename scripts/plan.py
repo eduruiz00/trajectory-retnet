@@ -1,10 +1,13 @@
 import json
 import pdb
+import numpy as np
+import pandas as pd
 from os.path import join
 from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
 
 import trajectory.utils as utils
+from trajectory.utils.timer import Timer
 from evaluation import evaluate
 
 class Parser(utils.Parser):
@@ -36,7 +39,18 @@ if args.model == "retnet":
     model.chunkwise_recurrent = False
 time_str = datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
 writer = SummaryWriter(log_dir=f"runs/plan/{args.model}_{args.dataset}_{time_str}")
-score, t, total_reward, terminal = evaluate(model, dataset, writer, args, render=(args.render == 'True'))
+
+planning_timer = Timer()
+
+score, t, total_reward, terminal, step_times = evaluate(model, dataset, writer, args, render=(args.render == 'True'))
+
+avg_step_time = np.mean(step_times)
+std_step_time = np.std(step_times)
+plan_time = planning_timer()
+
+dict_times = {'avg_step': avg_step_time, 'std_step': std_step_time, 'plan_time': plan_time}
+df_times = pd.DataFrame(dict_times)
+df_times.to_csv(join(args.savepath, 'plan_times.csv'))
 
 writer.close()
 
