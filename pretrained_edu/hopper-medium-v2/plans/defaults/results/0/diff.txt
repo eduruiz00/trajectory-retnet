@@ -1,0 +1,26 @@
+diff --git a/config/offline.py b/config/offline.py
+index 1dd7eb6..fbdd146 100644
+--- a/config/offline.py
++++ b/config/offline.py
+@@ -2,8 +2,10 @@ from trajectory.utils import watch
+ 
+ #------------------------ base ------------------------#
+ 
+-logbase = 'logs/'
+-gpt_expname = 'gpt/azure'
++#logbase = 'logs/'
++#gpt_expname = 'gpt/azure'
++logbase = 'pretrained/'
++gpt_expname = 'gpt/pretrained'
+ 
+ ## automatically make experiment names for planning
+ ## by labelling folders with these args
+@@ -29,7 +31,7 @@ base = {
+         'device': 'cuda',
+ 
+         'n_embd': 32,
+-        'batch_size': 256,
++        'batch_size': 64,
+         'learning_rate': 6e-4,
+         'lr_decay': True,
+         'seed': 42,
