@@ -11,7 +11,6 @@ slurm/config.sh
 slurm/*sandbox*
 *.img
 slurm-*.out
-*.png
 *.pdf
 mjkey.txt
 azure/fuse.cfg
