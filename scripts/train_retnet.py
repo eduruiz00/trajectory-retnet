@@ -135,7 +135,10 @@ starting_epoch = 0 if model_epoch is None else model_epoch + 1
 save_freq = int(n_epochs // args.n_saves)
 losses = []
 
-df_times = pd.DataFrame(columns=['epoch', 'time_trainer', 'time_epoch', 'acc_time'])
+timetable_file = os.path.join(args.savepath, 'time_table.csv')
+if not os.path.isfile(timetable_file):
+    df_times_empty = pd.DataFrame(columns=["epoch", "time_trainer (s)", "time_epoch (s)", "acc_time (min)"])
+    df_times_empty.to_csv(timetable_file, mode='w')
 
 training_timer = Timer()
 
@@ -163,10 +166,5 @@ for epoch in range(starting_epoch, n_epochs):
     torch.save(state, statepath)
     
     acc_time, epoch_time = training_timer(flag=True)
-    df_times = pd.concat([df_times, pd.DataFrame({
-        'epoch': [epoch],
-        'time_trainer (s)': [time],
-        'time_epoch (s)': [epoch_time],
-        'acc_time (min)': [acc_time / 60],
-    })], ignore_index=True)
-    df_times.to_csv(os.path.join(args.savepath, 'time_table.csv'))
+    df_times = pd.DataFrame([[epoch], [time], [epoch_time],[acc_time / 60]])
+    df_times.to_csv(timetable_file, mode='a')

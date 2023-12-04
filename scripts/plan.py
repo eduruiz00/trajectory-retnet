@@ -47,8 +47,7 @@ score, t, total_reward, terminal, step_times = evaluate(model, dataset, writer, 
 avg_step_time = np.mean(step_times)
 std_step_time = np.std(step_times)
 plan_time = planning_timer()
-
-dict_times = {'avg_step': avg_step_time, 'std_step': std_step_time, 'plan_time': plan_time}
+dict_times = {'avg_step': [avg_step_time], 'std_step': [std_step_time], 'plan_time': [plan_time]}
 df_times = pd.DataFrame(dict_times)
 df_times.to_csv(join(args.savepath, 'plan_times.csv'))
 
