@@ -21,3 +21,4 @@ environment_mireia.yml
 *nohup*
 *.out
 *.slurm
+*.pt

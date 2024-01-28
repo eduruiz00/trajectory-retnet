@@ -156,6 +156,7 @@ for epoch in range(starting_epoch, n_epochs):
     losses.append(loss)
 
     evaluate(model, dataset, trainer.writer, plan_args, training_epoch=epoch, max_episode_steps=args.training_episode_steps, render=False, curves_file=curves_file)
+    model.recurrent = False
     ## get greatest multiple of `save_freq` less than or equal to `save_epoch`
     save_epoch = epoch // save_freq * save_freq
     statepath = os.path.join(args.savepath, f'state_{save_epoch}.pt')

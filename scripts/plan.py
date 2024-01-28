@@ -25,7 +25,7 @@ args = Parser().parse_args('plan')
 #######################
 ####### models ########
 #######################
-
+print("subdirectory: ", args.subdirectory)
 loadpath = args.gpt_loadpath if args.model == "gpt" else args.retnet_loadpath
 args.exp_name = args.gpt_exp_name if args.model == "gpt" else args.retnet_exp_name
 

@@ -15,7 +15,7 @@ DATASETS = [
 LOGBASE = 'pretrained'
 TRIAL = '*'
 # EXP_NAME = 'plans/pretrained'
-EXP_NAME = 'plans/defaults/results'
+EXP_NAME = 'plans/defaults/retnet_freq1_H15_beam128'
 
 def load_results(paths):
 	'''
@@ -59,7 +59,6 @@ if __name__ == '__main__':
 	    dataset: str = None
 
 	args = Parser().parse_args()
-
 	for dataset in ([args.dataset] if args.dataset else DATASETS):
 		subdirs = glob.glob(os.path.join(LOGBASE, dataset, EXP_NAME))
 
