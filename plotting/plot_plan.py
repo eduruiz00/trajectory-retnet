@@ -100,17 +100,24 @@ def explore_folders(path, params, folders, model):
             path = os.path.join(path, model_plans)
             break
     if not folders:
-        folders = os.listdir(path)
+        all_dirs = [os.path.join(path, directory) for directory in os.listdir(path)]
+        folders = [directory for directory in filter(os.path.isdir, all_dirs)]
     for folder in folders:
-        data = pd.read_csv(os.path.join(path, folder, "plan_curves.csv"))
-        all_rewards.append(data["reward"])
-        all_total_rewards.append(data["total_reward"])
-        all_scores.append(data["score"])
-        all_steps.append(data["step"])
+        data = pd.read_csv(os.path.join(folder, "plan_curves.csv"))
+        try:
+            all_rewards.append(np.pad(data["reward"], (0,1000-len(data["reward"])), 'constant', constant_values=(0,0)))
+            all_total_rewards.append(np.pad(data["total_reward"], (0,1000-len(data["total_reward"])), 'edge'))
+            all_scores.append(np.pad(data["score"], (0,1000-len(data["score"])), 'edge'))
+            all_steps.append(np.pad(data["step"], (0,1000-len(data["step"])), 'linear_ramp', end_values=(0,999)))
+        except:
+            import pdb; pdb.set_trace()
     return all_steps, all_rewards, all_total_rewards, all_scores
 
 def extract_mean_and_std(data):
-    data_array = np.stack(data, axis=0)
+    try:
+        data_array = np.stack(data, axis=0)
+    except:
+        import pdb; pdb.set_trace()
     mean = np.mean(data_array, axis=-2)
     std = np.std(data_array, axis=-2)
     return  np.stack([mean, std], axis=-2)
@@ -123,14 +130,14 @@ if __name__ == '__main__':
     # matplotlib.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
     # matplotlib.rc('text', usetex=True)
     # plt.rcParams['text.usetex'] = True
-    plt.rcParams['font.family'] = 'serif'
-    plt.rcParams['font.serif'] = ['Computer Modern']
+    # plt.rcParams['font.family'] = 'serif'
+    # plt.rcParams['font.serif'] = ['Computer Modern']
     #################
 
     gpt_path = os.path.join(args.logbase, args.dataset, args.prefix)
     retnet_path = os.path.join(args.logbase, args.dataset, args.prefix)
 
-    all_params = ['freq1_H15_beam32', 'freq1_H5_beam32']
+    all_params = ['H5', 'H10', 'H15']
     all_gpt_steps = []
     all_gpt_rewards = []
     all_gpt_total_rewards = []
@@ -164,34 +171,35 @@ if __name__ == '__main__':
     xy_gpt_scores = [(np.array(gpt_steps[0]), mean_std) for gpt_steps, mean_std in zip(all_gpt_steps, extract_mean_and_std(all_gpt_scores))]
     xy_retnet_scores = [(np.array(retnet_steps[0]), mean_std) for retnet_steps, mean_std in zip(all_retnet_steps, extract_mean_and_std(all_retnet_scores))]
 
-    labels = [param.split("_")[1][1:] for param in all_params]
+    labels = [param[1:] for param in all_params]
 
-    plot_gpt_vs_retnet(
-        xy_gpt_rewards[0],
-        xy_retnet_rewards[0],
-        args.dataset.split("-")[0].capitalize() + " Reward Curves",
-        "Steps in Episode",
-        "Reward",
-        os.path.join(plots_path, args.dataset + "_" + all_params[0] + "_reward_curves.png")
-    )
+    for i, params in enumerate(all_params):
+        plot_gpt_vs_retnet(
+            xy_gpt_rewards[i],
+            xy_retnet_rewards[i],
+            args.dataset.split("-")[0].capitalize() + " Reward Curves H=" + params[1:],
+            "Steps in Episode",
+            "Reward",
+            os.path.join(plots_path, args.dataset + "_" + params + "_reward_curves.png")
+        )
 
-    plot_gpt_vs_retnet(
-        xy_gpt_total_rewards[0],
-        xy_retnet_total_rewards[0],
-        args.dataset.split("-")[0].capitalize() + " Total Reward Curves",
-        "Steps in Episode",
-        "Accumulated Reward",
-        os.path.join(plots_path, args.dataset + "_" + all_params[0] + "_total_reward_curves.png")
-    )
-    
-    plot_gpt_vs_retnet(
-        xy_gpt_scores[0],
-        xy_retnet_scores[0],
-        args.dataset.split("-")[0].capitalize() + " Normalized Total Reward Curves",
-        "Steps in Episode",
-        "Score",
-        os.path.join(plots_path, args.dataset + "_" + all_params[0] + "_score_curves.png")
-    )
+        plot_gpt_vs_retnet(
+            xy_gpt_total_rewards[i],
+            xy_retnet_total_rewards[i],
+            args.dataset.split("-")[0].capitalize() + " Total Reward Curves H=" + params[1:],
+            "Steps in Episode",
+            "Accumulated Reward",
+            os.path.join(plots_path, args.dataset + "_" + params + "_total_reward_curves.png")
+        )
+        
+        plot_gpt_vs_retnet(
+            xy_gpt_scores[i],
+            xy_retnet_scores[i],
+            args.dataset.split("-")[0].capitalize() + " Normalized Total Reward Curves H=" + params[1:],
+            "Steps in Episode",
+            "Score",
+            os.path.join(plots_path, args.dataset + "_" + params + "_score_curves.png")
+        )
 
     plot_multiple_curves(
         xy_gpt_rewards,

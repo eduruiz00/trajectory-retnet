@@ -14,8 +14,14 @@ DATASETS = [
 
 LOGBASE = 'pretrained'
 TRIAL = '*'
-# EXP_NAME = 'plans/pretrained'
-EXP_NAME = 'plans/defaults/retnet_freq1_H15_beam128'
+EXP_NAME = 'plans/pretrained'
+# EXP_NAME = 'plans/defaults/retnet_freq1_H15_beam128'
+EXP_NAMES = [
+    'plans/defaults/retnet_freq1_H15_beam128',
+    'plans/defaults/gpt_freq1_H15_beam128',
+    'plans/defaults/retnet_freq1_H5_beam32',
+    'plans/defaults/gpt_freq1_H5_beam32',
+]
 
 def load_results(paths):
 	'''
@@ -60,11 +66,11 @@ if __name__ == '__main__':
 
 	args = Parser().parse_args()
 	for dataset in ([args.dataset] if args.dataset else DATASETS):
-		subdirs = glob.glob(os.path.join(LOGBASE, dataset, EXP_NAME))
+		for exp_name in EXP_NAMES:
+			subdirs = glob.glob(os.path.join(LOGBASE, dataset, exp_name))
+			for subdir in subdirs:
+				reldir = subdir.split('/')[-1]
+				paths = glob.glob(os.path.join(subdir, TRIAL))
 
-		for subdir in subdirs:
-			reldir = subdir.split('/')[-1]
-			paths = glob.glob(os.path.join(subdir, TRIAL))
-
-			mean, err, scores = load_results(paths)
-			print(f'{dataset.ljust(30)} | {subdir.ljust(50)} | {len(scores)} scores \n    {mean:.2f} +/- {err:.2f}\n')
+				mean, err, scores = load_results(paths)
+				print(f'{dataset.ljust(30)} | {subdir.ljust(50)} | {len(scores)} scores \n    {mean:.2f} +/- {err:.2f}\n')
