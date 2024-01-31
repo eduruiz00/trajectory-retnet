@@ -1,10 +1,10 @@
 # Trajectory Transformer and Trajectory RetNet
 
-Code release for [Offline Reinforcement Learning as One Big Sequence Modeling Problem](https://arxiv.org/abs/2106.02039).
+This GitHub repository hosts the Trajectory RetNet project, where we explore the integration of Retentive Networks with Trajectory Transformers for potential enhancements in Reinforcement Learning (RL) scenarios. Retentive Networks are considered advancements over traditional Transformers, emphasizing optimization of inference time – a critical factor in RL where swift interactions with the environment are paramount.
 
-**New:** Also see [Alexander Nikulin's fork](https://github.com/Howuhh/faster-trajectory-transformer) with attention caching and vectorized rollouts!
+Our approach involves incorporating Retentive Networks into the Trajectory Transformer architecture, with the goal of achieving a balance between performance and inference time. However, our experiments indicate that the RetNet model did not surpass the performance of conventional Transformers across two of the three D4RL evaluated environments. Notably, RetNet exhibited increased inference time in two of the three evaluated environments.
 
-Also based on the Retentive Network paper: [Retentive Network: A Successor to Transformer for Large Language Models](https://arxiv.org/abs/2307.08621)
+This repository contains the code utilized in our experiments.
 
 ## Installation
 
@@ -46,19 +46,6 @@ python scripts/plan.py --dataset halfcheetah-medium-v2 \
 ```
 
 A few hyperparameters are different from those listed in the paper because of changes to the discretization strategy. These hyperparameters will be updated in the next arxiv version to match what is currently in the codebase.
-
-## Branches
-
-The project incorporates various branches at different stages to address the problem from different perspectives. Here is a description of the content in each branch:
-
-- `combining`: This serves as the primary branch of the project, encompassing code for both methods—the Trajectory Transformer and the Retentive Network. The primary structural changes to the project are implemented in this branch.
-
-- `master`: This branch exclusively contains the code for the Trajectory Transformer, excluding any Retentive Network code. It is currently outdated, reflecting only minor adjustments made to adapt it for the combined use of both models.
-
-- `comments_retnet`: In this branch, you will find comments providing dimensions and explanations for the forward function of the Retentive Network. These comments were added to enhance understanding and aid in debugging the code.
-
-- `time_analysis`: The time analysis branch was created to assess the duration of different methods and debug the model sizes. This auxiliary branch was generated to keep information separate from the main branch and to facilitate testing in isolation.
-
 
 ## Retentive Networks addition
 
